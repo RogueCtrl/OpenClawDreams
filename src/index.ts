@@ -34,9 +34,9 @@ function wrapGateway(api: OpenClawAPI): LLMClient {
         text: resp.content[0].text,
         usage: resp.usage
           ? {
-            input_tokens: resp.usage.input_tokens ?? 0,
-            output_tokens: resp.usage.output_tokens ?? 0,
-          }
+              input_tokens: resp.usage.input_tokens ?? 0,
+              output_tokens: resp.usage.output_tokens ?? 0,
+            }
           : undefined,
       };
     },
