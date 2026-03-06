@@ -73,7 +73,7 @@ export function registerCommands(parent: Command): void {
         console.log(chalk.bold("Token Budget:"));
         console.log(
           `  ${color(`${budget.used.toLocaleString()} / ${budget.limit.toLocaleString()} tokens (${pct}%)`)}` +
-            `  ${chalk.dim(`remaining: ${budget.remaining.toLocaleString()}`)}`
+          `  ${chalk.dim(`remaining: ${budget.remaining.toLocaleString()}`)}`
         );
         console.log(`  ${chalk.dim(`date: ${budget.date} UTC`)}`);
       } else {
@@ -142,6 +142,52 @@ export function registerCommands(parent: Command): void {
         const firstLine = content.split("\n")[0].replace(/^#\s*/, "");
         const stem = f.replace(/\.md$/, "").slice(0, 10);
         console.log(`  ${chalk.dim(stem)} ${firstLine}`);
+      }
+    });
+
+  parent
+    .command("reflect")
+    .description("Manually trigger the reflection and synthesis cycle")
+    .action(async () => {
+      console.log(chalk.cyan.bold("\nTriggering reflection cycle...\n"));
+      const { runReflectionCycle } = await import("./waking.js");
+      const { getOpenClawAPI } = await import("./index.js");
+      const { withBudget } = await import("./budget.js");
+      const api = getOpenClawAPI();
+
+      if (!api) {
+        console.error(chalk.red("Error: OpenClaw API is not available offline."));
+        console.error("This command must be run inside OpenClaw via 'openclaw electricsheep reflect'");
+        process.exit(1);
+      }
+
+      const client = withBudget({
+        async createMessage(params) {
+          const resp = await api.gateway.createMessage({
+            model: params.model,
+            max_tokens: params.maxTokens,
+            system: params.system,
+            messages: params.messages,
+          });
+          return {
+            text: resp.content[0].text,
+            usage: resp.usage
+              ? {
+                input_tokens: resp.usage.input_tokens ?? 0,
+                output_tokens: resp.usage.output_tokens ?? 0,
+              }
+              : undefined,
+          };
+        },
+      });
+
+      try {
+        await runReflectionCycle(client, api);
+        console.log(chalk.green.bold("\nReflection cycle complete.\n"));
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        console.error(chalk.red(`\nReflection failed: ${msg}\n`));
+        process.exit(1);
       }
     });
 } // end registerCommands
