@@ -128,20 +128,28 @@ export function register(api: OpenClawAPI): void {
 
   // --- Hooks ---
 
-  api.registerHook("before_agent_start", async (ctx) => {
-    // Capture workspace dir for identity loading (SOUL.md, IDENTITY.md)
-    if (ctx.workspaceDir && typeof ctx.workspaceDir === "string") {
-      setWorkspaceDir(ctx.workspaceDir);
-    }
-    return ctx;
+  api.registerHook({
+    name: "electricsheep_workspace_capture",
+    event: "before_agent_start",
+    handler: async (ctx) => {
+      // Capture workspace dir for identity loading (SOUL.md, IDENTITY.md)
+      if (ctx.workspaceDir && typeof ctx.workspaceDir === "string") {
+        setWorkspaceDir(ctx.workspaceDir);
+      }
+      return ctx;
+    },
   });
 
-  api.registerHook("agent_end", async (ctx) => {
-    const summary = ctx.conversationSummary as string | undefined;
-    if (summary) {
-      remember(summary, { type: "agent_conversation", summary }, "interaction");
-    }
-    return ctx;
+  api.registerHook({
+    name: "electricsheep_conversation_capture",
+    event: "agent_end",
+    handler: async (ctx) => {
+      const summary = ctx.conversationSummary as string | undefined;
+      if (summary) {
+        remember(summary, { type: "agent_conversation", summary }, "interaction");
+      }
+      return ctx;
+    },
   });
 
   // --- Background Service (replaces registerCron — not available in this API version) ---

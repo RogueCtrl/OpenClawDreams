@@ -29,7 +29,7 @@ function mockOpenClawAPI(): OpenClawAPI {
   return {
     registerTool: () => {},
     registerCli: () => {},
-    registerHook: (_event, _handler) => {},
+    registerHook: () => {},
     registerService: (_def: unknown) => {},
     gateway: {
       createMessage: async () => ({ content: [{ text: "" }] }),
@@ -47,7 +47,7 @@ function mockOpenClawAPIWithMemory(): OpenClawAPI & {
   return {
     registerTool: () => {},
     registerCli: () => {},
-    registerHook: (_event, _handler) => {},
+    registerHook: () => {},
     registerService: (_def: unknown) => {},
     gateway: {
       createMessage: async () => ({ content: [{ text: "" }] }),

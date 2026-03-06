@@ -183,7 +183,7 @@ export async function checkAndEngage(client: LLMClient): Promise<void> {
   const minimalApi: OpenClawAPI = {
     registerTool: () => {},
     registerCli: () => {},
-    registerHook: (_event, _handler) => {},
+    registerHook: () => {},
     registerService: (_def: unknown) => {},
     gateway: {
       createMessage: async () => ({ content: [{ text: "" }] }),
