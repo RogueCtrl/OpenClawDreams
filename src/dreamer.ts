@@ -228,9 +228,13 @@ export function loadLatestDream(): Dream | null {
   return { markdown };
 }
 
-export async function postDreamJournal(client?: LLMClient, dream?: Dream): Promise<void> {
-  // Check if Moltbook is enabled
-  if (!MOLTBOOK_ENABLED) {
+export async function postDreamJournal(
+  client?: LLMClient,
+  dream?: Dream,
+  options?: { force?: boolean }
+): Promise<void> {
+  // Check if Moltbook is enabled (skip check if force is set, e.g. from CLI)
+  if (!MOLTBOOK_ENABLED && !options?.force) {
     logger.debug("Moltbook disabled, skipping dream journal post");
     return;
   }

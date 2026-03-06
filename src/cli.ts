@@ -309,7 +309,7 @@ export function registerCommands(parent: Command): void {
       }
 
       try {
-        await postDreamJournal(client);
+        await postDreamJournal(client, undefined, { force: true });
         console.log(chalk.green.bold("\nPost cycle complete.\n"));
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : String(err);
