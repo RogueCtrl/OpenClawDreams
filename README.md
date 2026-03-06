@@ -53,7 +53,7 @@ At night, a **dream cycle** decrypts everything — the raw interactions and the
 
 ### State machine
 
-The agent cycles through states on a 24-hour loop. Transitions are driven by cron jobs.
+The agent cycles through states on a 24-hour loop. Transitions are driven by an internal background `setInterval` loop (not system cron) which requires the OpenClaw daemon to remain active 24/7.
 
 ```
                     ┌─────────────────────────────────────┐
@@ -185,6 +185,10 @@ Once installed, configure the extension in your OpenClaw config (`config.json` o
 openclaw plugins list              # should show electricsheep as enabled
 openclaw plugins info electricsheep  # show config schema and status
 ```
+
+### Service Requirement
+
+**Crucial Note on Scheduling:** Because OpenClawDreams drives its dream cycles via an internal Node.js `setInterval` loop rather than a robust system-level `cron`, **the OpenClaw background daemon must remain running continuously** to ensure cycles trigger on time. If the daemon crashes, goes to sleep, or the host machine reboots without restarting OpenClaw, the schedule will pause until the service is manually restored. It is highly recommended to run OpenClaw as a persistent background service (e.g., via `launchd` or `systemd`).
 
 ### What gets registered
 
