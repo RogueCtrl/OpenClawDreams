@@ -128,27 +128,46 @@ export function register(api: OpenClawAPI): void {
 
   // --- Hooks ---
 
-  api.registerHook("before_agent_start", {
-    name: "electricsheep_workspace_capture",
-    handler: async (ctx) => {
+  api.registerHook(
+    "before_agent_start",
+    async (ctx) => {
       // Capture workspace dir for identity loading (SOUL.md, IDENTITY.md)
       if (ctx.workspaceDir && typeof ctx.workspaceDir === "string") {
         setWorkspaceDir(ctx.workspaceDir);
       }
       return ctx;
     },
-  });
+    { name: "electricsheep_workspace_capture" }
+  );
 
-  api.registerHook("agent_end", {
-    name: "electricsheep_conversation_capture",
-    handler: async (ctx) => {
+  api.registerHook(
+    "agent_end",
+    async (ctx) => {
+      api.logger?.info?.(
+        `[ElectricSheep] agent_end hook fired! Context keys: ${Object.keys(ctx).join(", ")}`
+      );
       const summary = ctx.conversationSummary as string | undefined;
-      if (summary) {
-        remember(summary, { type: "agent_conversation", summary }, "interaction");
+      const historySummary = ctx.summary as string | undefined;
+      const finalSummary = summary || historySummary;
+
+      if (finalSummary) {
+        api.logger?.info?.(
+          `[ElectricSheep] Capturing conversation summary: ${finalSummary.slice(0, 50)}...`
+        );
+        remember(
+          finalSummary,
+          { type: "agent_conversation", summary: finalSummary },
+          "interaction"
+        );
+      } else {
+        api.logger?.warn?.(
+          `[ElectricSheep] No conversation summary found in agent_end context!`
+        );
       }
       return ctx;
     },
-  });
+    { name: "electricsheep_conversation_capture" }
+  );
 
   // --- Background Service (replaces registerCron — not available in this API version) ---
   // Schedules: reflection @ 8,12,16,20h | dream @ 2h | journal @ 7h (local time)

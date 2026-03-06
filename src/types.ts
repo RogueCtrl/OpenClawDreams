@@ -119,8 +119,9 @@ export interface OpenClawAPI {
     opts?: { commands?: string[] }
   ): void;
   registerHook(
-    event: string,
-    def: { name: string; handler: (ctx: Record<string, unknown>) => Promise<unknown> }
+    event: string | string[],
+    handler: (ctx: Record<string, unknown>) => Promise<unknown>,
+    opts?: { name: string }
   ): void;
   registerService(def: { id: string; start: () => void; stop: () => void }): void;
   logger?: {
