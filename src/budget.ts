@@ -15,7 +15,7 @@ export class BudgetExceededError extends Error {
   constructor(used: number, limit: number) {
     super(
       `Daily token budget exceeded: ${used.toLocaleString()} / ${limit.toLocaleString()} tokens used. ` +
-      `Resets at midnight UTC. Override with MAX_DAILY_TOKENS env var (0 to disable).`
+        `Resets at midnight UTC. Override with MAX_DAILY_TOKENS env var (0 to disable).`
     );
     this.name = "BudgetExceededError";
   }

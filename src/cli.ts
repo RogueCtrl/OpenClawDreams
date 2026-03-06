@@ -16,7 +16,7 @@ import { readdirSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { setVerbose } from "./logger.js";
 import { DREAMS_DIR } from "./config.js";
-import type { AgentState, DeepMemoryStats } from "./types.js";
+import type { AgentState, DeepMemoryStats, OpenClawAPI } from "./types.js";
 
 /**
  * Register all ElectricSheep subcommands onto a parent Command.
@@ -73,7 +73,7 @@ export function registerCommands(parent: Command): void {
         console.log(chalk.bold("Token Budget:"));
         console.log(
           `  ${color(`${budget.used.toLocaleString()} / ${budget.limit.toLocaleString()} tokens (${pct}%)`)}` +
-          `  ${chalk.dim(`remaining: ${budget.remaining.toLocaleString()}`)}`
+            `  ${chalk.dim(`remaining: ${budget.remaining.toLocaleString()}`)}`
         );
         console.log(`  ${chalk.dim(`date: ${budget.date} UTC`)}`);
       } else {
@@ -151,38 +151,115 @@ export function registerCommands(parent: Command): void {
     .action(async () => {
       console.log(chalk.cyan.bold("\nTriggering reflection cycle...\n"));
       const { runReflectionCycle } = await import("./waking.js");
-      const { getOpenClawAPI } = await import("./index.js");
       const { withBudget } = await import("./budget.js");
-      const api = getOpenClawAPI();
+      const { AGENT_MODEL } = await import("./config.js");
 
-      if (!api) {
-        console.error(chalk.red("Error: OpenClaw API is not available offline."));
-        console.error("This command must be run inside OpenClaw via 'openclaw electricsheep reflect'");
+      // Resolve API key: read OpenClaw's auth-profiles.json directly, then fallback to env
+      let apiKey: string | undefined;
+      try {
+        const { readFileSync } = await import("fs");
+        const { join } = await import("path");
+        const { homedir } = await import("os");
+
+        // Search common auth-profiles.json locations
+        const candidates = [
+          join(homedir(), ".openclaw", "agents", "main", "agent", "auth-profiles.json"),
+          join(homedir(), ".openclaw", "agents", "default", "auth-profiles.json"),
+          join(homedir(), ".openclaw", "auth-profiles.json"),
+        ];
+
+        for (const path of candidates) {
+          try {
+            const raw = JSON.parse(readFileSync(path, "utf-8"));
+            const profiles = raw.profiles || {};
+            // Find any anthropic profile with a key or token
+            for (const profile of Object.values(profiles) as Record<string, unknown>[]) {
+              if (profile.provider === "anthropic") {
+                apiKey =
+                  String(profile.key || profile.token || profile.apiKey || "") ||
+                  undefined;
+                if (apiKey) break;
+              }
+            }
+            if (apiKey) break;
+          } catch {
+            // try next candidate
+          }
+        }
+      } catch {
+        // ignore file read errors
+      }
+
+      // Fallback to env var
+      if (!apiKey) {
+        apiKey = process.env.ANTHROPIC_API_KEY;
+      }
+
+      if (!apiKey) {
+        console.error(
+          chalk.red(
+            "No Anthropic API key found. Set ANTHROPIC_API_KEY or configure via openclaw."
+          )
+        );
         process.exit(1);
       }
 
-      const client = withBudget({
+      // Create a lightweight LLM client using direct Anthropic API calls
+      const directClient = withBudget({
         async createMessage(params) {
-          const resp = await api.gateway.createMessage({
-            model: params.model,
-            max_tokens: params.maxTokens,
-            system: params.system,
-            messages: params.messages,
+          const resp = await fetch("https://api.anthropic.com/v1/messages", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "x-api-key": apiKey!,
+              "anthropic-version": "2023-06-01",
+            },
+            body: JSON.stringify({
+              model: params.model || AGENT_MODEL,
+              max_tokens: params.maxTokens,
+              system: params.system,
+              messages: params.messages,
+            }),
           });
+          if (!resp.ok) {
+            const body = await resp.text();
+            throw new Error(`Anthropic API error ${resp.status}: ${body}`);
+          }
+          const data = (await resp.json()) as Record<string, unknown>;
+          const contentArr = data.content as Array<{ text?: string }> | undefined;
+          const text =
+            contentArr?.[0]?.text ?? contentArr?.map((c) => c.text).join("") ?? "";
           return {
-            text: resp.content[0].text,
-            usage: resp.usage
+            text,
+            usage: data.usage
               ? {
-                input_tokens: resp.usage.input_tokens ?? 0,
-                output_tokens: resp.usage.output_tokens ?? 0,
-              }
+                  input_tokens: (data.usage as Record<string, number>).input_tokens ?? 0,
+                  output_tokens:
+                    (data.usage as Record<string, number>).output_tokens ?? 0,
+                }
               : undefined,
           };
         },
       });
 
+      // Build a minimal API object for the reflection cycle
+      const minimalApi = {
+        registerTool: () => {},
+        registerCli: () => {},
+        registerHook: () => {},
+        registerService: () => {},
+        registerGatewayMethod: () => {},
+        runtime: { subagent: {} } as OpenClawAPI["runtime"],
+        memory: undefined,
+        logger: {
+          info: (msg: string) => console.log(chalk.dim(msg)),
+          warn: (msg: string) => console.log(chalk.yellow(msg)),
+          error: (msg: string) => console.error(chalk.red(msg)),
+        },
+      };
+
       try {
-        await runReflectionCycle(client, api);
+        await runReflectionCycle(directClient, minimalApi as unknown as OpenClawAPI);
         console.log(chalk.green.bold("\nReflection cycle complete.\n"));
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : String(err);
