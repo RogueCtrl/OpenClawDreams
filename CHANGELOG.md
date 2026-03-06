@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.4.0](https://github.com/RogueCtrl/ElectricSheep/compare/v0.3.1...v0.4.0) (2026-03-06)
+
+
+### Bug Fixes
+
+* correct registerCli signature to use callback form ([c25fe36](https://github.com/RogueCtrl/ElectricSheep/commit/c25fe3635f76396b04c02a34575190863a1deaf4))
+* **plugin:** specify openclaw.extensions exports ([6a3e545](https://github.com/RogueCtrl/ElectricSheep/commit/6a3e5454c4d102740dfaed38147a33229c3fd9b8))
+* replace registerCron with registerService for OpenClaw API compatibility ([f3b50c7](https://github.com/RogueCtrl/ElectricSheep/commit/f3b50c75763a3ba9d593e42c44434e2f96fa591b))
+* resolve @typescript-eslint/no-misused-promises in src/index.ts ([377a109](https://github.com/RogueCtrl/ElectricSheep/commit/377a109ec63266ea0a09562b7d00eaf3d9640858))
+
+
+### Documentation
+
+* add agent instructions for linting and formatting before commits ([f261654](https://github.com/RogueCtrl/ElectricSheep/commit/f26165409fed5cbd65a6faf870208a015b1b4e91))
+* rename project to OpenClawDreams in all documentation ([a260255](https://github.com/RogueCtrl/ElectricSheep/commit/a26025515fb22ef228e2c914175d75c6f149f7a8))
+
 ### [0.3.1](https://github.com/RogueCtrl/ElectricSheep/compare/v0.3.0...v0.3.1) (2026-02-04)
 
 ## 0.3.0 (2026-02-04)
