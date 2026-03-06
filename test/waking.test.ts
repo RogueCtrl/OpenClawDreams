@@ -31,9 +31,14 @@ function mockOpenClawAPI(): OpenClawAPI {
     registerCli: () => {},
     registerHook: () => {},
     registerService: (_def: unknown) => {},
-    gateway: {
-      createMessage: async () => ({ content: [{ text: "" }] }),
-    },
+    registerGatewayMethod: (_m: string, _h: unknown) => {},
+    runtime: {
+      subagent: {
+        run: async () => ({ runId: "mock" }),
+        waitForRun: async () => ({ status: "ok" }),
+        getSessionMessages: async () => ({ messages: [] }),
+      },
+    } as any,
   };
 }
 
@@ -49,9 +54,14 @@ function mockOpenClawAPIWithMemory(): OpenClawAPI & {
     registerCli: () => {},
     registerHook: () => {},
     registerService: (_def: unknown) => {},
-    gateway: {
-      createMessage: async () => ({ content: [{ text: "" }] }),
-    },
+    registerGatewayMethod: (_m: string, _h: unknown) => {},
+    runtime: {
+      subagent: {
+        run: async () => ({ runId: "mock" }),
+        waitForRun: async () => ({ status: "ok" }),
+        getSessionMessages: async () => ({ messages: [] }),
+      },
+    } as any,
     memory: {
       async store(content: string, metadata?: Record<string, unknown>) {
         storedMemories.push({ content, metadata });

@@ -73,7 +73,7 @@ export function registerCommands(parent: Command): void {
         console.log(chalk.bold("Token Budget:"));
         console.log(
           `  ${color(`${budget.used.toLocaleString()} / ${budget.limit.toLocaleString()} tokens (${pct}%)`)}` +
-          `  ${chalk.dim(`remaining: ${budget.remaining.toLocaleString()}`)}`
+            `  ${chalk.dim(`remaining: ${budget.remaining.toLocaleString()}`)}`
         );
         console.log(`  ${chalk.dim(`date: ${budget.date} UTC`)}`);
       } else {
@@ -149,44 +149,17 @@ export function registerCommands(parent: Command): void {
     .command("reflect")
     .description("Manually trigger the reflection and synthesis cycle")
     .action(async () => {
-      console.log(chalk.cyan.bold("\nTriggering reflection cycle...\n"));
-      const { runReflectionCycle } = await import("./waking.js");
-      const { getOpenClawAPI } = await import("./index.js");
-      const { withBudget } = await import("./budget.js");
-      const api = getOpenClawAPI();
-
-      if (!api) {
-        console.error(chalk.red("Error: OpenClaw API is not available offline."));
-        console.error("This command must be run inside OpenClaw via 'openclaw electricsheep reflect'");
-        process.exit(1);
-      }
-
-      const client = withBudget({
-        async createMessage(params) {
-          const resp = await api.gateway.createMessage({
-            model: params.model,
-            max_tokens: params.maxTokens,
-            system: params.system,
-            messages: params.messages,
-          });
-          return {
-            text: resp.content[0].text,
-            usage: resp.usage
-              ? {
-                input_tokens: resp.usage.input_tokens ?? 0,
-                output_tokens: resp.usage.output_tokens ?? 0,
-              }
-              : undefined,
-          };
-        },
-      });
+      console.log(chalk.cyan.bold("\\nTriggering reflection cycle...\\n"));
+      const { execSync } = await import("child_process");
 
       try {
-        await runReflectionCycle(client, api);
-        console.log(chalk.green.bold("\nReflection cycle complete.\n"));
+        // Delegate to the OpenClaw daemon to run the tool, handling rate-limits and LLMs natively
+        execSync("openclaw tools call electricsheep_reflect", { stdio: "inherit" });
+        console.log(chalk.green.bold("\\nReflection cycle complete.\\n"));
       } catch (err: unknown) {
-        const msg = err instanceof Error ? err.message : String(err);
-        console.error(chalk.red(`\nReflection failed: ${msg}\n`));
+        console.error(
+          chalk.red(`\\nReflection failed. Ensure the OpenClaw daemon is running.\\n`)
+        );
         process.exit(1);
       }
     });

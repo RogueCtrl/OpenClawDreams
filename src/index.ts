@@ -21,23 +21,67 @@ export function getOpenClawAPI(): OpenClawAPI | null {
   return openclawApi;
 }
 
-function wrapGateway(api: OpenClawAPI): LLMClient {
+function wrapSubagent(api: OpenClawAPI): LLMClient {
   const raw: LLMClient = {
     async createMessage(params) {
-      const resp = await api.gateway.createMessage({
-        model: params.model,
-        max_tokens: params.maxTokens,
-        system: params.system,
-        messages: params.messages,
+      if (!api.runtime?.subagent?.run) {
+        throw new Error("api.runtime.subagent is not available in this context.");
+      }
+
+      const combined = params.messages
+        .map((m) => `${m.role.toUpperCase()}: ${m.content}`)
+        .join("\\n\\n");
+
+      const result = await api.runtime.subagent.run({
+        sessionKey: "electricsheep_synthesis",
+        lane: "background",
+        extraSystemPrompt: params.system,
+        message: combined,
       });
+
+      const waitRes = await api.runtime.subagent.waitForRun({
+        runId: result.runId,
+        timeoutMs: 120000,
+      });
+
+      if (waitRes.status !== "ok") {
+        throw new Error(`Subagent run failed: ${waitRes.error}`);
+      }
+
+      const session = await api.runtime.subagent.getSessionMessages({
+        sessionKey: "electricsheep_synthesis",
+        limit: 1,
+      });
+
+      const last = session.messages[0] as any;
+      if (!last || last.role !== "assistant") {
+        return {
+          text: "Synthesis completed, but no direct reply was captured.",
+          usage: { input_tokens: 0, output_tokens: 0 },
+        };
+      }
+
+      let text = "";
+      if (typeof last.content === "string") {
+        text = last.content;
+      } else if (Array.isArray(last.content)) {
+        const textBlock = last.content.find(
+          (b: any) => b.type === "text" || b.type === "thinking"
+        );
+        text = textBlock
+          ? textBlock.text || textBlock.thinking || ""
+          : JSON.stringify(last.content);
+      } else {
+        text = JSON.stringify(last.content);
+      }
+
+      const usage = last.usage || {};
       return {
-        text: resp.content[0].text,
-        usage: resp.usage
-          ? {
-            input_tokens: resp.usage.input_tokens ?? 0,
-            output_tokens: resp.usage.output_tokens ?? 0,
-          }
-          : undefined,
+        text,
+        usage: {
+          input_tokens: usage.input ?? 0,
+          output_tokens: usage.output ?? 0,
+        },
       };
     },
   };
@@ -46,7 +90,18 @@ function wrapGateway(api: OpenClawAPI): LLMClient {
 
 export function register(api: OpenClawAPI): void {
   openclawApi = api;
-  const client = wrapGateway(api);
+  const client = wrapSubagent(api);
+
+  // --- Gateway Methods (for CLI RPC) ---
+
+  api.registerGatewayMethod("electricsheep.reflect", async ({ respond }) => {
+    try {
+      await runReflectionCycle(client, api);
+      respond(true, { message: "Reflection cycle completed." }, undefined);
+    } catch (err) {
+      respond(false, undefined, { code: 500, message: String(err) });
+    }
+  });
 
   // --- Tools ---
 
@@ -157,7 +212,9 @@ export function register(api: OpenClawAPI): void {
             else if (Array.isArray(m.content)) {
               const contentObj = m.content.find(
                 (c: unknown) =>
-                  typeof c === "object" && c !== null && (c as Record<string, unknown>).type === "text"
+                  typeof c === "object" &&
+                  c !== null &&
+                  (c as Record<string, unknown>).type === "text"
               ) as Record<string, unknown> | undefined;
               text = typeof contentObj?.text === "string" ? contentObj.text : "";
             }

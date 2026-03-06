@@ -185,9 +185,14 @@ export async function checkAndEngage(client: LLMClient): Promise<void> {
     registerCli: () => {},
     registerHook: () => {},
     registerService: (_def: unknown) => {},
-    gateway: {
-      createMessage: async () => ({ content: [{ text: "" }] }),
-    },
+    registerGatewayMethod: (_m: string, _h: unknown) => {},
+    runtime: {
+      subagent: {
+        run: async () => ({ runId: "mock" }),
+        waitForRun: async () => ({ status: "ok" }),
+        getSessionMessages: async () => ({ messages: [] }),
+      },
+    } as any,
   };
 
   await runReflectionCycle(client, minimalApi);

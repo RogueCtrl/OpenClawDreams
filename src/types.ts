@@ -124,21 +124,35 @@ export interface OpenClawAPI {
     opts?: { name: string }
   ): void;
   registerService(def: { id: string; start: () => void; stop: () => void }): void;
+  registerGatewayMethod(
+    method: string,
+    handler: (ctx: {
+      params: any;
+      respond: (ok: boolean, result: any, error: any) => void;
+    }) => Promise<void> | void
+  ): void;
   logger?: {
     info?: (msg: string) => void;
     warn?: (msg: string) => void;
     error?: (msg: string) => void;
   };
-  gateway: {
-    createMessage(params: {
-      model: string;
-      max_tokens: number;
-      system: string;
-      messages: Array<{ role: string; content: string }>;
-    }): Promise<{
-      content: Array<{ text: string }>;
-      usage?: { input_tokens?: number; output_tokens?: number };
-    }>;
+  runtime: {
+    subagent: {
+      run(params: {
+        sessionKey: string;
+        message: string;
+        extraSystemPrompt?: string;
+        lane?: string;
+      }): Promise<{ runId: string }>;
+      waitForRun(params: {
+        runId: string;
+        timeoutMs?: number;
+      }): Promise<{ status: string; error?: string }>;
+      getSessionMessages(params: {
+        sessionKey: string;
+        limit?: number;
+      }): Promise<{ messages: Array<any> }>;
+    };
   };
   memory?: OpenClawMemoryAPI;
   channels?: OpenClawChannelsAPI;
