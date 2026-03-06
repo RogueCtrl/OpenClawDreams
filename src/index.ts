@@ -118,10 +118,12 @@ export function register(api: OpenClawAPI): void {
 
   api.registerCli(
     ({ program }) => {
-      const esCmd = program.command("electricsheep").description("ElectricSheep — an AI agent that dreams.");
+      const esCmd = program
+        .command("electricsheep")
+        .description("ElectricSheep — an AI agent that dreams.");
       registerCommands(esCmd);
     },
-    { commands: ["electricsheep"] },
+    { commands: ["electricsheep"] }
   );
 
   // --- Hooks ---
@@ -149,12 +151,26 @@ export function register(api: OpenClawAPI): void {
   let _lastRanHour = -1;
 
   const SCHEDULE: Record<number, () => Promise<void>> = {
-    2: async () => { await runDreamCycle(client, api); },
-    7: async () => { if (MOLTBOOK_ENABLED) { await postDreamJournal(client); } },
-    8: async () => { await runReflectionCycle(client, api); },
-    12: async () => { await runReflectionCycle(client, api); },
-    16: async () => { await runReflectionCycle(client, api); },
-    20: async () => { await runReflectionCycle(client, api); },
+    2: async () => {
+      await runDreamCycle(client, api);
+    },
+    7: async () => {
+      if (MOLTBOOK_ENABLED) {
+        await postDreamJournal(client);
+      }
+    },
+    8: async () => {
+      await runReflectionCycle(client, api);
+    },
+    12: async () => {
+      await runReflectionCycle(client, api);
+    },
+    16: async () => {
+      await runReflectionCycle(client, api);
+    },
+    20: async () => {
+      await runReflectionCycle(client, api);
+    },
   };
 
   api.registerService({
@@ -169,7 +185,9 @@ export function register(api: OpenClawAPI): void {
             try {
               await SCHEDULE[hour]();
             } catch (err) {
-              api.logger?.warn?.(`[ElectricSheep] scheduled job hour=${hour} failed: ${err}`);
+              api.logger?.warn?.(
+                `[ElectricSheep] scheduled job hour=${hour} failed: ${err}`
+              );
             }
           }
         })();

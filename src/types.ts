@@ -122,11 +122,7 @@ export interface OpenClawAPI {
     event: string,
     handler: (ctx: Record<string, unknown>) => Promise<unknown>
   ): void;
-  registerService(def: {
-    id: string;
-    start: () => void;
-    stop: () => void;
-  }): void;
+  registerService(def: { id: string; start: () => void; stop: () => void }): void;
   logger?: {
     info?: (msg: string) => void;
     warn?: (msg: string) => void;
