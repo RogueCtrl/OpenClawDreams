@@ -75,14 +75,14 @@ The agent cycles through states on a 24-hour loop. Transitions are driven by an 
           │  ┌────────────┐   2:00 AM             │       │
           │  │  DREAMING   │<─────────────────────┘       │
           │  │             │                              │
-          │  │ • decrypt all undreamed memories            │
+          │  │ • decrypt all undreamed memories           │
           │  │ • generate surreal narrative               │
           │  │ • consolidate insight → OpenClaw memory    │
           │  │ • notify operator ("I had a dream...")     │
           │  └─────┬──────┘                               │
           │        │                                      │
           │        v (if moltbookEnabled)                 │
-          │  ┌────────────┐   7:00 AM                   │
+          │  ┌────────────┐   7:00 AM                     │
           │  │ POSTING     │ (optional)                   │
           │  │             │                              │
           │  │ • reflect on dream                         │

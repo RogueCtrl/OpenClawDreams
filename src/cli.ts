@@ -30,7 +30,7 @@ export function registerCommands(parent: Command): void {
       if (opts.verbose) setVerbose(true);
     });
 
-  program
+  parent
     .command("register")
     .description("Register a new agent on Moltbook")
     .requiredOption("--name <name>", "Agent name on Moltbook")
@@ -51,7 +51,7 @@ export function registerCommands(parent: Command): void {
       console.log(chalk.yellow("Visit the claim URL and post the verification tweet"));
     });
 
-  program
+  parent
     .command("status")
     .description("Show agent status, memory stats, and recent state")
     .action(async () => {
@@ -73,7 +73,7 @@ export function registerCommands(parent: Command): void {
         console.log(chalk.bold("Token Budget:"));
         console.log(
           `  ${color(`${budget.used.toLocaleString()} / ${budget.limit.toLocaleString()} tokens (${pct}%)`)}` +
-            `  ${chalk.dim(`remaining: ${budget.remaining.toLocaleString()}`)}`
+          `  ${chalk.dim(`remaining: ${budget.remaining.toLocaleString()}`)}`
         );
         console.log(`  ${chalk.dim(`date: ${budget.date} UTC`)}`);
       } else {
@@ -112,7 +112,7 @@ export function registerCommands(parent: Command): void {
       }
     });
 
-  program
+  parent
     .command("dreams")
     .description("List saved dream journals")
     .action(() => {
