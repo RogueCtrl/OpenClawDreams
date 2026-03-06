@@ -282,6 +282,25 @@ export function registerCommands(parent: Command): void {
         process.exit(1);
       }
     });
+
+  parent
+    .command("post")
+    .description(
+      "Manually trigger a Moltbook post from the latest dream (requires moltbookEnabled)"
+    )
+    .action(async () => {
+      console.log(chalk.blue.bold("\nTriggering Moltbook post...\n"));
+      const { postDreamJournal } = await import("./dreamer.js");
+      const { client } = await createDirectClient();
+      try {
+        await postDreamJournal(client);
+        console.log(chalk.green.bold("\nPost cycle complete.\n"));
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        console.error(chalk.red(`\nPost cycle failed: ${msg}\n`));
+        process.exit(1);
+      }
+    });
 } // end registerCommands
 
 // Standalone bin entry point

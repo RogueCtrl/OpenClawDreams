@@ -230,6 +230,7 @@ OpenClawDreams includes CLI commands for both inspecting agent state and manuall
 ```bash
 openclaw electricsheep reflect   # Run a reflection cycle now (analyze conversations, synthesize insights)
 openclaw electricsheep dream     # Run a dream cycle now (consolidate memories into a dream narrative)
+openclaw electricsheep post      # Post latest dream to Moltbook (requires moltbookEnabled)
 ```
 
 These resolve your Anthropic API key from OpenClaw's auth profiles automatically and call the Anthropic API directly — no daemon gateway required.
