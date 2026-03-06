@@ -149,17 +149,119 @@ export function registerCommands(parent: Command): void {
     .command("reflect")
     .description("Manually trigger the reflection and synthesis cycle")
     .action(async () => {
-      console.log(chalk.cyan.bold("\\nTriggering reflection cycle...\\n"));
-      const { execSync } = await import("child_process");
+      console.log(chalk.cyan.bold("\nTriggering reflection cycle...\n"));
+      const { runReflectionCycle } = await import("./waking.js");
+      const { withBudget } = await import("./budget.js");
+      const { AGENT_MODEL } = await import("./config.js");
+
+      // Resolve API key: read OpenClaw's auth-profiles.json directly, then fallback to env
+      let apiKey: string | undefined;
+      try {
+        const { readFileSync } = await import("fs");
+        const { join } = await import("path");
+        const { homedir } = await import("os");
+
+        // Search common auth-profiles.json locations
+        const candidates = [
+          join(homedir(), ".openclaw", "agents", "main", "agent", "auth-profiles.json"),
+          join(homedir(), ".openclaw", "agents", "default", "auth-profiles.json"),
+          join(homedir(), ".openclaw", "auth-profiles.json"),
+        ];
+
+        for (const path of candidates) {
+          try {
+            const raw = JSON.parse(readFileSync(path, "utf-8"));
+            const profiles = raw.profiles || {};
+            // Find any anthropic profile with a key or token
+            for (const profile of Object.values(profiles) as any[]) {
+              if (profile.provider === "anthropic") {
+                apiKey = profile.key || profile.token || profile.apiKey;
+                if (apiKey) break;
+              }
+            }
+            if (apiKey) break;
+          } catch {
+            // try next candidate
+          }
+        }
+      } catch {
+        // ignore file read errors
+      }
+
+      // Fallback to env var
+      if (!apiKey) {
+        apiKey = process.env.ANTHROPIC_API_KEY;
+      }
+
+      if (!apiKey) {
+        console.error(
+          chalk.red(
+            "No Anthropic API key found. Set ANTHROPIC_API_KEY or configure via openclaw."
+          )
+        );
+        process.exit(1);
+      }
+
+      // Create a lightweight LLM client using direct Anthropic API calls
+      const directClient = withBudget({
+        async createMessage(params) {
+          const resp = await fetch("https://api.anthropic.com/v1/messages", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "x-api-key": apiKey!,
+              "anthropic-version": "2023-06-01",
+            },
+            body: JSON.stringify({
+              model: params.model || AGENT_MODEL,
+              max_tokens: params.maxTokens,
+              system: params.system,
+              messages: params.messages,
+            }),
+          });
+          if (!resp.ok) {
+            const body = await resp.text();
+            throw new Error(`Anthropic API error ${resp.status}: ${body}`);
+          }
+          const data = (await resp.json()) as any;
+          const text =
+            data.content?.[0]?.text ??
+            data.content?.map((c: any) => c.text).join("") ??
+            "";
+          return {
+            text,
+            usage: data.usage
+              ? {
+                  input_tokens: data.usage.input_tokens ?? 0,
+                  output_tokens: data.usage.output_tokens ?? 0,
+                }
+              : undefined,
+          };
+        },
+      });
+
+      // Build a minimal API object for the reflection cycle
+      const minimalApi = {
+        registerTool: () => {},
+        registerCli: () => {},
+        registerHook: () => {},
+        registerService: () => {},
+        registerGatewayMethod: () => {},
+        runtime: { subagent: {} } as any,
+        memory: undefined,
+        logger: {
+          info: (msg: string) => console.log(chalk.dim(msg)),
+          warn: (msg: string) => console.log(chalk.yellow(msg)),
+          error: (msg: string) => console.error(chalk.red(msg)),
+        },
+      };
 
       try {
-        // Delegate to the OpenClaw daemon to run the tool, handling rate-limits and LLMs natively
-        execSync("openclaw tools call electricsheep_reflect", { stdio: "inherit" });
-        console.log(chalk.green.bold("\\nReflection cycle complete.\\n"));
+        await runReflectionCycle(directClient, minimalApi as any);
+        console.log(chalk.green.bold("\nReflection cycle complete.\n"));
       } catch (err: unknown) {
-        console.error(
-          chalk.red(`\\nReflection failed. Ensure the OpenClaw daemon is running.\\n`)
-        );
+        const msg = err instanceof Error ? err.message : String(err);
+        console.error(chalk.red(`\nReflection failed: ${msg}\n`));
         process.exit(1);
       }
     });
