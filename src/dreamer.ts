@@ -271,15 +271,12 @@ export async function postDreamJournal(
     return;
   }
 
-  const filteredTitle = await applyFilter(client, postTitle, "post");
-  if (filteredTitle === null) {
-    logger.warn("Dream journal title blocked by filter, not posting");
-    return;
-  }
+  // Title is a short programmatic string — no need to filter, just cap at Moltbook's 300 char limit
+  const safeTitle = postTitle.slice(0, 300);
 
   try {
-    await moltbook.createPost(filteredTitle, filteredContent, "general");
-    logger.info(`Dream journal posted: ${filteredTitle}`);
+    await moltbook.createPost(safeTitle, filteredContent, "general");
+    logger.info(`Dream journal posted: ${safeTitle}`);
   } catch (e) {
     logger.error(`Failed to post dream journal: ${e}`);
   }
