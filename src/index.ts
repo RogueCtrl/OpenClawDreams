@@ -128,9 +128,8 @@ export function register(api: OpenClawAPI): void {
 
   // --- Hooks ---
 
-  api.registerHook({
+  api.registerHook("before_agent_start", {
     name: "electricsheep_workspace_capture",
-    event: "before_agent_start",
     handler: async (ctx) => {
       // Capture workspace dir for identity loading (SOUL.md, IDENTITY.md)
       if (ctx.workspaceDir && typeof ctx.workspaceDir === "string") {
@@ -140,9 +139,8 @@ export function register(api: OpenClawAPI): void {
     },
   });
 
-  api.registerHook({
+  api.registerHook("agent_end", {
     name: "electricsheep_conversation_capture",
-    event: "agent_end",
     handler: async (ctx) => {
       const summary = ctx.conversationSummary as string | undefined;
       if (summary) {
