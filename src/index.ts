@@ -103,6 +103,40 @@ export function register(api: OpenClawAPI): void {
     }
   });
 
+  api.registerGatewayMethod("electricsheep.dream", async ({ respond }) => {
+    try {
+      const dream = await runDreamCycle(client, api);
+      if (dream) {
+        respond(true, { message: "Dream cycle completed.", dream }, undefined);
+      } else {
+        respond(
+          true,
+          { message: "No undreamed memories — nothing to dream." },
+          undefined
+        );
+      }
+    } catch (err) {
+      respond(false, undefined, { code: 500, message: String(err) });
+    }
+  });
+
+  api.registerGatewayMethod("electricsheep.journal", async ({ respond }) => {
+    try {
+      if (!MOLTBOOK_ENABLED) {
+        respond(
+          true,
+          { message: "Moltbook is disabled — journal post skipped." },
+          undefined
+        );
+        return;
+      }
+      await postDreamJournal(client);
+      respond(true, { message: "Dream journal posted to Moltbook." }, undefined);
+    } catch (err) {
+      respond(false, undefined, { code: 500, message: String(err) });
+    }
+  });
+
   // --- Tools ---
 
   api.registerTool({
