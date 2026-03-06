@@ -2,6 +2,30 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.5.2](https://github.com/RogueCtrl/OpenClawDreams/compare/v0.5.0...v0.5.2) (2026-03-06)
+
+
+### Features
+
+* **cli:** add reflect command to manually trigger reflection/synthesis ([a021650](https://github.com/RogueCtrl/OpenClawDreams/commit/a02165022bb0313683893fe2e0ff0c7d426db993))
+
+
+### Bug Fixes
+
+* **agent_end:** manually synthesize summary and track LLM usage ([76c85cb](https://github.com/RogueCtrl/OpenClawDreams/commit/76c85cb068edd4420169557103091bf8634e36b8))
+* **cli:** use direct Anthropic API for reflect command instead of nonexistent tools call ([016bc48](https://github.com/RogueCtrl/OpenClawDreams/commit/016bc48bfa70f7ffb25565f5988a49c667ebec0a))
+* correct agent_end hook registration signature to match OpenClaw API ([d323b5a](https://github.com/RogueCtrl/OpenClawDreams/commit/d323b5a12356010806f32a917adb59ce8f39f4a6))
+* correct registerHook signature to (event, {name, handler}) ([2f67c71](https://github.com/RogueCtrl/OpenClawDreams/commit/2f67c7152178c1977c83d65f8ed719ac177e0acf))
+* **lint:** replace all any types with proper typed alternatives ([3698cc4](https://github.com/RogueCtrl/OpenClawDreams/commit/3698cc4b4a37594b7efdc6e4dc3f01c1cb8cade1))
+* **openclaw:** upgrade plugin to use subagent runtime for reflection ([027679d](https://github.com/RogueCtrl/OpenClawDreams/commit/027679d3566d3a2d5ff410acc7c4e6459c204fd2))
+* use correct OpenClaw API registerHook(events, handler, opts) signature ([8493c4b](https://github.com/RogueCtrl/OpenClawDreams/commit/8493c4bca3d29c0ab7f17e666a3dd50d93fda89e))
+
+
+### Tests
+
+* fix ENOTEMPTY failures in rmSync due to lingering Winston logger streams ([84f9152](https://github.com/RogueCtrl/OpenClawDreams/commit/84f9152441b8c4299b57475567c2767601e05145))
+* remove temporary environment test files ([fbe76af](https://github.com/RogueCtrl/OpenClawDreams/commit/fbe76af8157f27e0afedb2ce13c841c67a477939))
+
 ### [0.5.1](https://github.com/RogueCtrl/OpenClawDreams/compare/v0.5.0...v0.5.1) (2026-03-06)
 
 ## [0.5.0](https://github.com/RogueCtrl/OpenClawDreams/compare/v0.4.0...v0.5.0) (2026-03-06)
