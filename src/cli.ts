@@ -16,7 +16,7 @@ import { readdirSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { setVerbose } from "./logger.js";
 import { DREAMS_DIR } from "./config.js";
-import type { AgentState, DeepMemoryStats } from "./types.js";
+import type { AgentState, DeepMemoryStats, OpenClawAPI } from "./types.js";
 
 /**
  * Register all ElectricSheep subcommands onto a parent Command.
@@ -173,9 +173,11 @@ export function registerCommands(parent: Command): void {
             const raw = JSON.parse(readFileSync(path, "utf-8"));
             const profiles = raw.profiles || {};
             // Find any anthropic profile with a key or token
-            for (const profile of Object.values(profiles) as any[]) {
+            for (const profile of Object.values(profiles) as Record<string, unknown>[]) {
               if (profile.provider === "anthropic") {
-                apiKey = profile.key || profile.token || profile.apiKey;
+                apiKey =
+                  String(profile.key || profile.token || profile.apiKey || "") ||
+                  undefined;
                 if (apiKey) break;
               }
             }
@@ -223,17 +225,17 @@ export function registerCommands(parent: Command): void {
             const body = await resp.text();
             throw new Error(`Anthropic API error ${resp.status}: ${body}`);
           }
-          const data = (await resp.json()) as any;
+          const data = (await resp.json()) as Record<string, unknown>;
+          const contentArr = data.content as Array<{ text?: string }> | undefined;
           const text =
-            data.content?.[0]?.text ??
-            data.content?.map((c: any) => c.text).join("") ??
-            "";
+            contentArr?.[0]?.text ?? contentArr?.map((c) => c.text).join("") ?? "";
           return {
             text,
             usage: data.usage
               ? {
-                  input_tokens: data.usage.input_tokens ?? 0,
-                  output_tokens: data.usage.output_tokens ?? 0,
+                  input_tokens: (data.usage as Record<string, number>).input_tokens ?? 0,
+                  output_tokens:
+                    (data.usage as Record<string, number>).output_tokens ?? 0,
                 }
               : undefined,
           };
@@ -247,7 +249,7 @@ export function registerCommands(parent: Command): void {
         registerHook: () => {},
         registerService: () => {},
         registerGatewayMethod: () => {},
-        runtime: { subagent: {} } as any,
+        runtime: { subagent: {} } as OpenClawAPI["runtime"],
         memory: undefined,
         logger: {
           info: (msg: string) => console.log(chalk.dim(msg)),
@@ -257,7 +259,7 @@ export function registerCommands(parent: Command): void {
       };
 
       try {
-        await runReflectionCycle(directClient, minimalApi as any);
+        await runReflectionCycle(directClient, minimalApi as unknown as OpenClawAPI);
         console.log(chalk.green.bold("\nReflection cycle complete.\n"));
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : String(err);

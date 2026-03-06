@@ -38,7 +38,7 @@ function mockOpenClawAPI(): OpenClawAPI {
         waitForRun: async () => ({ status: "ok" }),
         getSessionMessages: async () => ({ messages: [] }),
       },
-    } as any,
+    } as OpenClawAPI["runtime"],
   };
 }
 
@@ -61,7 +61,7 @@ function mockOpenClawAPIWithMemory(): OpenClawAPI & {
         waitForRun: async () => ({ status: "ok" }),
         getSessionMessages: async () => ({ messages: [] }),
       },
-    } as any,
+    } as OpenClawAPI["runtime"],
     memory: {
       async store(content: string, metadata?: Record<string, unknown>) {
         storedMemories.push({ content, metadata });

@@ -192,7 +192,7 @@ export async function checkAndEngage(client: LLMClient): Promise<void> {
         waitForRun: async () => ({ status: "ok" }),
         getSessionMessages: async () => ({ messages: [] }),
       },
-    } as any,
+    } as OpenClawAPI["runtime"],
   };
 
   await runReflectionCycle(client, minimalApi);

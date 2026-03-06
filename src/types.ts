@@ -127,8 +127,8 @@ export interface OpenClawAPI {
   registerGatewayMethod(
     method: string,
     handler: (ctx: {
-      params: any;
-      respond: (ok: boolean, result: any, error: any) => void;
+      params: unknown;
+      respond: (ok: boolean, result: unknown, error: unknown) => void;
     }) => Promise<void> | void
   ): void;
   logger?: {
@@ -151,7 +151,7 @@ export interface OpenClawAPI {
       getSessionMessages(params: {
         sessionKey: string;
         limit?: number;
-      }): Promise<{ messages: Array<any> }>;
+      }): Promise<{ messages: Array<Record<string, unknown>> }>;
     };
   };
   memory?: OpenClawMemoryAPI;

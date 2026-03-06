@@ -53,7 +53,7 @@ function wrapSubagent(api: OpenClawAPI): LLMClient {
         limit: 1,
       });
 
-      const last = session.messages[0] as any;
+      const last = session.messages[0] as Record<string, unknown> | undefined;
       if (!last || last.role !== "assistant") {
         return {
           text: "Synthesis completed, but no direct reply was captured.",
@@ -61,21 +61,21 @@ function wrapSubagent(api: OpenClawAPI): LLMClient {
         };
       }
 
-      let text = "";
+      let text: string;
       if (typeof last.content === "string") {
         text = last.content;
       } else if (Array.isArray(last.content)) {
-        const textBlock = last.content.find(
-          (b: any) => b.type === "text" || b.type === "thinking"
+        const textBlock = (last.content as Record<string, unknown>[]).find(
+          (b) => b.type === "text" || b.type === "thinking"
         );
         text = textBlock
-          ? textBlock.text || textBlock.thinking || ""
+          ? String(textBlock.text || textBlock.thinking || "")
           : JSON.stringify(last.content);
       } else {
         text = JSON.stringify(last.content);
       }
 
-      const usage = last.usage || {};
+      const usage = (last.usage || {}) as Record<string, number>;
       return {
         text,
         usage: {
