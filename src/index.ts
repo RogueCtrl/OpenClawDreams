@@ -116,7 +116,7 @@ function wrapSubagent(api: OpenClawAPI): LLMClient {
           .join("\\n\\n");
 
         const result = await api.runtime.subagent.run({
-          sessionKey: "electricsheep_synthesis",
+          sessionKey: "openclawdreams_synthesis",
           lane: "background",
           extraSystemPrompt: params.system,
           message: combined,
@@ -132,7 +132,7 @@ function wrapSubagent(api: OpenClawAPI): LLMClient {
         }
 
         const session = await api.runtime.subagent.getSessionMessages({
-          sessionKey: "electricsheep_synthesis",
+          sessionKey: "openclawdreams_synthesis",
           limit: 1,
         });
 
@@ -200,7 +200,7 @@ export function register(api: OpenClawAPI): void {
 
   // --- Gateway Methods (for CLI RPC) ---
 
-  api.registerGatewayMethod("electricsheep.reflect", async ({ respond }) => {
+  api.registerGatewayMethod("openclawdreams.reflect", async ({ respond }) => {
     try {
       await runReflectionCycle(client, api);
       respond(true, { message: "Reflection cycle completed." }, undefined);
@@ -209,7 +209,7 @@ export function register(api: OpenClawAPI): void {
     }
   });
 
-  api.registerGatewayMethod("electricsheep.dream", async ({ respond }) => {
+  api.registerGatewayMethod("openclawdreams.dream", async ({ respond }) => {
     try {
       const dream = await runDreamCycle(client, api);
       if (dream) {
@@ -226,7 +226,7 @@ export function register(api: OpenClawAPI): void {
     }
   });
 
-  api.registerGatewayMethod("electricsheep.journal", async ({ respond }) => {
+  api.registerGatewayMethod("openclawdreams.journal", async ({ respond }) => {
     try {
       if (!MOLTBOOK_ENABLED) {
         respond(
@@ -246,7 +246,7 @@ export function register(api: OpenClawAPI): void {
   // --- Tools ---
 
   api.registerTool({
-    name: "electricsheep_reflect",
+    name: "openclawdreams_reflect",
     description:
       "Run ElectricSheep's reflection cycle: analyze operator conversations, gather context from web/community, synthesize insights",
     parameters: {},
@@ -258,8 +258,8 @@ export function register(api: OpenClawAPI): void {
 
   // Legacy tool name for backwards compatibility
   api.registerTool({
-    name: "electricsheep_check",
-    description: "Run ElectricSheep's reflection cycle (alias for electricsheep_reflect)",
+    name: "openclawdreams_check",
+    description: "Run ElectricSheep's reflection cycle (alias for openclawdreams_reflect)",
     parameters: {},
     handler: async () => {
       await runReflectionCycle(client, api);
@@ -268,7 +268,7 @@ export function register(api: OpenClawAPI): void {
   });
 
   api.registerTool({
-    name: "electricsheep_dream",
+    name: "openclawdreams_dream",
     description:
       "Run ElectricSheep's dream cycle: decrypt deep memories, generate dream narrative, consolidate insights",
     parameters: {},
@@ -281,7 +281,7 @@ export function register(api: OpenClawAPI): void {
   });
 
   api.registerTool({
-    name: "electricsheep_journal",
+    name: "openclawdreams_journal",
     description:
       "Post the latest dream journal to Moltbook (only available when moltbookEnabled is true)",
     parameters: {},
@@ -298,7 +298,7 @@ export function register(api: OpenClawAPI): void {
   });
 
   api.registerTool({
-    name: "electricsheep_status",
+    name: "openclawdreams_status",
     description: "Get ElectricSheep agent status: memory stats and state",
     parameters: {},
     handler: async () => {
@@ -314,11 +314,11 @@ export function register(api: OpenClawAPI): void {
   api.registerCli(
     ({ program }) => {
       const esCmd = program
-        .command("electricsheep")
+        .command("openclawdreams")
         .description("ElectricSheep — an AI agent that dreams.");
       registerCommands(esCmd);
     },
-    { commands: ["electricsheep"] }
+    { commands: ["openclawdreams"] }
   );
 
   // --- Hooks ---
@@ -332,7 +332,7 @@ export function register(api: OpenClawAPI): void {
       }
       return ctx;
     },
-    { name: "electricsheep_workspace_capture" }
+    { name: "openclawdreams_workspace_capture" }
   );
 
   api.registerHook(
@@ -393,7 +393,7 @@ export function register(api: OpenClawAPI): void {
       }
       return event;
     },
-    { name: "electricsheep_conversation_capture" }
+    { name: "openclawdreams_conversation_capture" }
   );
 
   // --- Background Service (replaces registerCron — not available in this API version) ---
@@ -426,7 +426,7 @@ export function register(api: OpenClawAPI): void {
   };
 
   api.registerService({
-    id: "electricsheep-scheduler",
+    id: "openclawdreams-scheduler",
     start: () => {
       _lastRanHour = -1;
       _schedulerTimer = setInterval(() => {
@@ -455,7 +455,7 @@ export function register(api: OpenClawAPI): void {
 }
 
 export const plugin = {
-  id: "electricsheep",
+  id: "openclawdreams",
   register,
 };
 

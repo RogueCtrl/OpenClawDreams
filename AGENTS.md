@@ -4,9 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-> **Note for agents:** This project is branded **OpenClawDreams**. The internal npm package name, plugin id, tool names, and CLI are all still `electricsheep` — do not rename those in code.
+> **Note for agents:** This project is branded **OpenClawDreams**. The npm package name, plugin id, tool names, service names, and CLI are all `openclawdreams`. The repo directory is still called `ElectricSheep`.
 
-OpenClawDreams (internal package name: `electricsheep`) is an OpenClaw extension (TypeScript) that gives an agent an encrypted memory system. It synthesizes the agent's interactions with their human operator, enriching them with context from web searches and (optionally) the Moltbook AI agent community. The core conceit: all memories are encrypted in deep storage — only the dream process can decrypt them. The waking agent sees nothing from ElectricSheep directly; dream insights surface through OpenClaw memory.
+OpenClawDreams (internal package name: `openclawdreams`) is an OpenClaw extension (TypeScript) that gives an agent an encrypted memory system. It synthesizes the agent's interactions with their human operator, enriching them with context from web searches and (optionally) the Moltbook AI agent community. The core conceit: all memories are encrypted in deep storage — only the dream process can decrypt them. The waking agent sees nothing from ElectricSheep directly; dream insights surface through OpenClaw memory.
 
 The agent processes its daily work into surreal dream narratives at night, then can notify its operator with "I had a dream last night..." to spark conversation about the dream's themes and insights.
 
@@ -24,9 +24,9 @@ openclaw plugins install -l .   # link for development
 openclaw plugins list            # verify loaded
 
 # CLI utilities (standalone, no OpenClaw needed)
-npx electricsheep register --name "Name" --description "Bio"  # Moltbook registration (optional)
-npx electricsheep status     # show agent state, memory stats, budget info
-npx electricsheep dreams     # list saved dream journal files
+npx openclawdreams register --name "Name" --description "Bio"  # Moltbook registration (optional)
+npx openclawdreams status     # show agent state, memory stats, budget info
+npx openclawdreams dreams     # list saved dream journal files
 
 # Tests
 npm test                     # node:test + tsx, runs test/**/*.test.ts
@@ -80,18 +80,18 @@ No manual release steps required — just merge and the release happens.
 `src/index.ts` exports a `register(api)` function called by the OpenClaw plugin loader. It registers:
 
 **5 tools:**
-- `electricsheep_reflect` — run the reflection cycle (analyze conversations, gather context, synthesize)
-- `electricsheep_check` — legacy alias for `electricsheep_reflect`
-- `electricsheep_dream` — run the dream cycle (decrypt, dream, consolidate). Note: when triggered via this tool (manually), the `api` is not passed to `runDreamCycle`, so OpenClaw memory storage and operator notifications are skipped
-- `electricsheep_journal` — post latest dream to Moltbook (no-op if Moltbook disabled)
-- `electricsheep_status` — return agent state and deep memory stats
+- `openclawdreams_reflect` — run the reflection cycle (analyze conversations, gather context, synthesize)
+- `openclawdreams_check` — legacy alias for `openclawdreams_reflect`
+- `openclawdreams_dream` — run the dream cycle (decrypt, dream, consolidate). Note: when triggered via this tool (manually), the `api` is not passed to `runDreamCycle`, so OpenClaw memory storage and operator notifications are skipped
+- `openclawdreams_journal` — post latest dream to Moltbook (no-op if Moltbook disabled)
+- `openclawdreams_status` — return agent state and deep memory stats
 
 **2 hooks:**
 - `before_agent_start` — captures `workspaceDir` for identity loading
 - `agent_end` — captures `conversationSummary` and stores it via `remember()` as an `interaction`
 
 **1 background scheduler service (replaces cron jobs):**
-- `electricsheep-scheduler` service — polls every 60s, fires reflection at 8/12/16/20h, dream at 2am, journal at 7am (if Moltbook enabled)
+- `openclawdreams-scheduler` service — polls every 60s, fires reflection at 8/12/16/20h, dream at 2am, journal at 7am (if Moltbook enabled)
 - 
 - 
 
@@ -243,7 +243,7 @@ data/
 │   └── YYYY-MM-DD_slug.md        # Dream narrative markdown files
 ├── .dream_key                    # AES-256 key (base64, chmod 600) — security-critical
 ├── credentials.json              # Moltbook API credentials (if registered)
-└── electricsheep-YYYY-MM-DD.log  # Daily rotating log files
+└── openclawdreams-YYYY-MM-DD.log  # Daily rotating log files
 ```
 
 The encryption key at `data/.dream_key` enforces the separation between waking and dreaming states. It is created with exclusive mode (`wx` flag) and `0o600` permissions.
