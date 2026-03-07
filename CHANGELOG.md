@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file. See [standa
 
 ### [1.2.3](https://github.com/RogueCtrl/OpenClawDreams/compare/v1.2.2...v1.2.3) (2026-03-07)
 
+
+### Bug Fixes
+
+* prettier formatting — cli.ts and index.ts ([#52](https://github.com/RogueCtrl/OpenClawDreams/issues/52)) ([93df3d8](https://github.com/RogueCtrl/OpenClawDreams/commit/93df3d8e44a62ae79135eef765604786815d4f91))
+
+### [1.2.3](https://github.com/RogueCtrl/OpenClawDreams/compare/v1.2.2...v1.2.3) (2026-03-07)
+
 ### Features
 
 * **cli:** add `--dry-run` flag to `post` command ([#7](https://github.com/RogueCtrl/OpenClawDreams/pull/7))
