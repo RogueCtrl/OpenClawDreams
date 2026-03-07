@@ -43,7 +43,8 @@ async function resolveAnthropicApiKey(): Promise<string | undefined> {
       const profiles = (raw.profiles || {}) as Record<string, Record<string, unknown>>;
       for (const profile of Object.values(profiles)) {
         if (profile.provider === "anthropic") {
-          const key = String(profile.key || profile.token || profile.apiKey || "") || undefined;
+          const key =
+            String(profile.key || profile.token || profile.apiKey || "") || undefined;
           if (key) return key;
         }
       }
@@ -169,7 +170,9 @@ function wrapSubagent(api: OpenClawAPI): LLMClient {
       }
 
       // ── Fallback path: direct Anthropic API (background scheduler context) ──
-      logger.debug("api.runtime.subagent unavailable — using direct Anthropic API fallback");
+      logger.debug(
+        "api.runtime.subagent unavailable — using direct Anthropic API fallback"
+      );
 
       if (cachedApiKey === null) {
         cachedApiKey = (await resolveAnthropicApiKey()) ?? "";
@@ -178,7 +181,7 @@ function wrapSubagent(api: OpenClawAPI): LLMClient {
       if (!cachedApiKey) {
         throw new Error(
           "api.runtime.subagent is not available and no Anthropic API key could be resolved. " +
-          "Set ANTHROPIC_API_KEY or configure an Anthropic auth profile in OpenClaw."
+            "Set ANTHROPIC_API_KEY or configure an Anthropic auth profile in OpenClaw."
         );
       }
 
@@ -259,7 +262,8 @@ export function register(api: OpenClawAPI): void {
   // Legacy tool name for backwards compatibility
   api.registerTool({
     name: "openclawdreams_check",
-    description: "Run ElectricSheep's reflection cycle (alias for openclawdreams_reflect)",
+    description:
+      "Run ElectricSheep's reflection cycle (alias for openclawdreams_reflect)",
     parameters: {},
     handler: async () => {
       await runReflectionCycle(client, api);
