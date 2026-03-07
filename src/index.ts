@@ -6,7 +6,12 @@
 
 import { registerCommands } from "./cli.js";
 import { runReflectionCycle } from "./waking.js";
-import { runDreamCycle, postDreamJournal, loadLatestDream, deriveSlug } from "./dreamer.js";
+import {
+  runDreamCycle,
+  postDreamJournal,
+  loadLatestDream,
+  deriveSlug,
+} from "./dreamer.js";
 import { deepMemoryStats, remember } from "./memory.js";
 import { loadState } from "./state.js";
 import { withBudget } from "./budget.js";

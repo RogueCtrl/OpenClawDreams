@@ -290,9 +290,8 @@ export function registerCommands(parent: Command): void {
     )
     .option("-d, --dry-run", "Show what would be posted without calling Moltbook API")
     .action(async (opts: { dryRun?: boolean }) => {
-      const { postDreamJournal, loadLatestDream, deriveSlug } = await import(
-        "./dreamer.js"
-      );
+      const { postDreamJournal, loadLatestDream, deriveSlug } =
+        await import("./dreamer.js");
       const { reflectOnDreamJournal } = await import("./reflection.js");
       const { applyFilter } = await import("./filter.js");
       const { getDreamSubmolt } = await import("./config.js");
