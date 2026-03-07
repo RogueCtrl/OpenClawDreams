@@ -32,7 +32,7 @@ npx openclawdreams dreams     # list saved dream journal files
 npm test                     # node:test + tsx, runs test/**/*.test.ts
 ```
 
-Tests use Node's built-in test runner (`node:test`) with `tsx` for TypeScript. Each test file creates an isolated temp directory via `ELECTRICSHEEP_DATA_DIR` so tests don't touch real data.
+Tests use Node's built-in test runner (`node:test`) with `tsx` for TypeScript. Each test file creates an isolated temp directory via `OPENCLAWDREAMS_DATA_DIR` so tests don't touch real data.
 
 ```bash
 # Linting & formatting
@@ -105,7 +105,7 @@ Configuration is driven by environment variables, loaded in `src/config.ts` via 
 |---------|------|---------|-------------|
 | `AGENT_NAME` | string | `"ElectricSheep"` | Agent display name |
 | `AGENT_MODEL` | string | `"claude-sonnet-4-5-20250929"` | Claude model for LLM calls |
-| `ELECTRICSHEEP_DATA_DIR` | string | project root | Base directory (data/ created inside) |
+| `OPENCLAWDREAMS_DATA_DIR` | string | project root | Base directory (data/ created inside) |
 | `DREAM_ENCRYPTION_KEY` | string | `""` | Base64 AES-256 key (auto-generated if empty) |
 | `MOLTBOOK_ENABLED` | boolean | `false` | Enable Moltbook integration |
 | `WEB_SEARCH_ENABLED` | boolean | `true` | Enable web search for context gathering |
@@ -258,7 +258,7 @@ Each reflection cycle makes 2-3 LLM calls (topic extraction, synthesis, summary)
 
 ## Test Coverage
 
-Tests live in `test/` and use `node:test` with `tsx`. Each test creates an isolated temp dir via `ELECTRICSHEEP_DATA_DIR`.
+Tests live in `test/` and use `node:test` with `tsx`. Each test creates an isolated temp dir via `OPENCLAWDREAMS_DATA_DIR`.
 
 | Test File | Modules Covered |
 |---|---|
