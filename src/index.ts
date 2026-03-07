@@ -12,6 +12,7 @@ import { loadState } from "./state.js";
 import { withBudget } from "./budget.js";
 import { setWorkspaceDir } from "./identity.js";
 import { MOLTBOOK_ENABLED } from "./config.js";
+import logger from "./logger.js";
 import type { LLMClient, OpenClawAPI } from "./types.js";
 
 // Store reference to OpenClaw API for use by other modules
@@ -21,68 +22,173 @@ export function getOpenClawAPI(): OpenClawAPI | null {
   return openclawApi;
 }
 
+/**
+ * Resolve an Anthropic API key from OpenClaw auth profiles or environment.
+ * Returns undefined if no key can be found.
+ */
+async function resolveAnthropicApiKey(): Promise<string | undefined> {
+  const { readFileSync } = await import("node:fs");
+  const { join } = await import("node:path");
+  const { homedir } = await import("node:os");
+
+  const candidates = [
+    join(homedir(), ".openclaw", "agents", "main", "agent", "auth-profiles.json"),
+    join(homedir(), ".openclaw", "agents", "default", "auth-profiles.json"),
+    join(homedir(), ".openclaw", "auth-profiles.json"),
+  ];
+
+  for (const p of candidates) {
+    try {
+      const raw = JSON.parse(readFileSync(p, "utf-8"));
+      const profiles = (raw.profiles || {}) as Record<string, Record<string, unknown>>;
+      for (const profile of Object.values(profiles)) {
+        if (profile.provider === "anthropic") {
+          const key = String(profile.key || profile.token || profile.apiKey || "") || undefined;
+          if (key) return key;
+        }
+      }
+    } catch {
+      /* try next candidate */
+    }
+  }
+
+  return process.env.ANTHROPIC_API_KEY || undefined;
+}
+
+/**
+ * Direct Anthropic API call — used as fallback when the subagent runtime is
+ * unavailable (e.g. background scheduler context).
+ */
+async function directAnthropicCall(
+  apiKey: string,
+  params: {
+    model: string;
+    maxTokens: number;
+    system: string;
+    messages: Array<{ role: string; content: string }>;
+  }
+): Promise<{ text: string; usage?: { input_tokens: number; output_tokens: number } }> {
+  const resp = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-api-key": apiKey,
+      "anthropic-version": "2023-06-01",
+    },
+    body: JSON.stringify({
+      model: params.model,
+      max_tokens: params.maxTokens,
+      system: params.system,
+      messages: params.messages,
+    }),
+  });
+
+  if (!resp.ok) {
+    const body = await resp.text();
+    throw new Error(`Anthropic API error ${resp.status}: ${body}`);
+  }
+
+  const data = (await resp.json()) as Record<string, unknown>;
+  const contentArr = data.content as Array<{ text?: string }> | undefined;
+  const text = contentArr?.[0]?.text ?? contentArr?.map((c) => c.text).join("") ?? "";
+
+  return {
+    text,
+    usage: data.usage
+      ? {
+          input_tokens: (data.usage as Record<string, number>).input_tokens ?? 0,
+          output_tokens: (data.usage as Record<string, number>).output_tokens ?? 0,
+        }
+      : undefined,
+  };
+}
+
 function wrapSubagent(api: OpenClawAPI): LLMClient {
+  // Lazily resolved API key for the direct fallback path
+  let cachedApiKey: string | null = null; // null = not yet resolved, "" = not found
+
   const raw: LLMClient = {
     async createMessage(params) {
-      if (!api.runtime?.subagent?.run) {
-        throw new Error("api.runtime.subagent is not available in this context.");
-      }
+      // ── Primary path: subagent runtime (available in request / hook context) ──
+      if (api.runtime?.subagent?.run) {
+        const combined = params.messages
+          .map((m) => `${m.role.toUpperCase()}: ${m.content}`)
+          .join("\\n\\n");
 
-      const combined = params.messages
-        .map((m) => `${m.role.toUpperCase()}: ${m.content}`)
-        .join("\\n\\n");
+        const result = await api.runtime.subagent.run({
+          sessionKey: "electricsheep_synthesis",
+          lane: "background",
+          extraSystemPrompt: params.system,
+          message: combined,
+        });
 
-      const result = await api.runtime.subagent.run({
-        sessionKey: "electricsheep_synthesis",
-        lane: "background",
-        extraSystemPrompt: params.system,
-        message: combined,
-      });
+        const waitRes = await api.runtime.subagent.waitForRun({
+          runId: result.runId,
+          timeoutMs: 120000,
+        });
 
-      const waitRes = await api.runtime.subagent.waitForRun({
-        runId: result.runId,
-        timeoutMs: 120000,
-      });
+        if (waitRes.status !== "ok") {
+          throw new Error(`Subagent run failed: ${waitRes.error}`);
+        }
 
-      if (waitRes.status !== "ok") {
-        throw new Error(`Subagent run failed: ${waitRes.error}`);
-      }
+        const session = await api.runtime.subagent.getSessionMessages({
+          sessionKey: "electricsheep_synthesis",
+          limit: 1,
+        });
 
-      const session = await api.runtime.subagent.getSessionMessages({
-        sessionKey: "electricsheep_synthesis",
-        limit: 1,
-      });
+        const last = session.messages[0] as Record<string, unknown> | undefined;
+        if (!last || last.role !== "assistant") {
+          return {
+            text: "Synthesis completed, but no direct reply was captured.",
+            usage: { input_tokens: 0, output_tokens: 0 },
+          };
+        }
 
-      const last = session.messages[0] as Record<string, unknown> | undefined;
-      if (!last || last.role !== "assistant") {
+        let text: string;
+        if (typeof last.content === "string") {
+          text = last.content;
+        } else if (Array.isArray(last.content)) {
+          const textBlock = (last.content as Record<string, unknown>[]).find(
+            (b) => b.type === "text" || b.type === "thinking"
+          );
+          text = textBlock
+            ? String(textBlock.text || textBlock.thinking || "")
+            : JSON.stringify(last.content);
+        } else {
+          text = JSON.stringify(last.content);
+        }
+
+        const usage = (last.usage || {}) as Record<string, number>;
         return {
-          text: "Synthesis completed, but no direct reply was captured.",
-          usage: { input_tokens: 0, output_tokens: 0 },
+          text,
+          usage: {
+            input_tokens: usage.input ?? 0,
+            output_tokens: usage.output ?? 0,
+          },
         };
       }
 
-      let text: string;
-      if (typeof last.content === "string") {
-        text = last.content;
-      } else if (Array.isArray(last.content)) {
-        const textBlock = (last.content as Record<string, unknown>[]).find(
-          (b) => b.type === "text" || b.type === "thinking"
-        );
-        text = textBlock
-          ? String(textBlock.text || textBlock.thinking || "")
-          : JSON.stringify(last.content);
-      } else {
-        text = JSON.stringify(last.content);
+      // ── Fallback path: direct Anthropic API (background scheduler context) ──
+      logger.debug("api.runtime.subagent unavailable — using direct Anthropic API fallback");
+
+      if (cachedApiKey === null) {
+        cachedApiKey = (await resolveAnthropicApiKey()) ?? "";
       }
 
-      const usage = (last.usage || {}) as Record<string, number>;
-      return {
-        text,
-        usage: {
-          input_tokens: usage.input ?? 0,
-          output_tokens: usage.output ?? 0,
-        },
-      };
+      if (!cachedApiKey) {
+        throw new Error(
+          "api.runtime.subagent is not available and no Anthropic API key could be resolved. " +
+          "Set ANTHROPIC_API_KEY or configure an Anthropic auth profile in OpenClaw."
+        );
+      }
+
+      const { AGENT_MODEL } = await import("./config.js");
+      return directAnthropicCall(cachedApiKey, {
+        model: params.model ?? AGENT_MODEL,
+        maxTokens: params.maxTokens,
+        system: params.system,
+        messages: params.messages,
+      });
     },
   };
   return withBudget(raw);
