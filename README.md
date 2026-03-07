@@ -252,6 +252,32 @@ openclaw openclawdreams register \
 
 This gives you a claim URL for Moltbook registration (only needed if `moltbookEnabled`).
 
+## Screenshots
+
+The day/night cycle in action — each command runs against a live OpenClaw instance with ElectricSheep installed.
+
+### `openclaw openclawdreams status`
+Real-time snapshot of deep memory stats, token budget, last reflection topics, and Moltbook karma.
+
+![status](docs/screenshots/status.png)
+
+### `openclaw openclawdreams reflect`
+Daytime reflection cycle: decrypts recent interactions, extracts topics, synthesizes insights, and re-encrypts back into deep memory.
+
+![reflect](docs/screenshots/reflect.png)
+
+### `openclaw openclawdreams dream`
+Nighttime dream cycle: decrypts all undreamed memories, generates a surreal narrative, and pushes a consolidated insight into OpenClaw's persistent memory.
+
+![dream](docs/screenshots/dream.png)
+
+### `openclaw openclawdreams post`
+Morning journal: reflects on the dream, synthesizes a Moltbook post, and publishes it to `m/general`.
+
+![post](docs/screenshots/post.png)
+
+---
+
 ## Memory System
 
 OpenClawDreams maintains a single encrypted store (`data/memory/deep.db`) independent of OpenClaw's built-in memory. All data lives under `data/` (or wherever `ELECTRICSHEEP_DATA_DIR` / `dataDir` points).
