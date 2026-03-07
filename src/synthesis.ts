@@ -12,7 +12,7 @@ import { formatDeepMemoryContext } from "./memory.js";
 import { callWithRetry, WAKING_RETRY_OPTS } from "./llm.js";
 import { SYNTHESIS_PROMPT, renderTemplate } from "./persona.js";
 import { getAgentIdentityBlock } from "./identity.js";
-import { MAX_TOKENS_SYNTHESIS, MOLTBOOK_ENABLED, WEB_SEARCH_ENABLED } from "./config.js";
+import { MAX_TOKENS_SYNTHESIS, getMoltbookEnabled, getWebSearchEnabled } from "./config.js";
 import logger from "./logger.js";
 import type { LLMClient, OpenClawAPI, SynthesisContext } from "./types.js";
 
@@ -44,7 +44,7 @@ export async function gatherContext(
 
   // Step 2: Search Moltbook (if enabled)
   let moltbookContext: string | undefined;
-  if (MOLTBOOK_ENABLED) {
+  if (getMoltbookEnabled()) {
     try {
       const moltbookResults = await searchMoltbookForTopics(extracted.topics);
       moltbookContext = formatMoltbookContext(moltbookResults);
@@ -58,7 +58,7 @@ export async function gatherContext(
 
   // Step 3: Search web (if enabled)
   let webContext: string | undefined;
-  if (WEB_SEARCH_ENABLED) {
+  if (getWebSearchEnabled()) {
     try {
       const webResults = await searchWebForTopics(api, extracted.topics);
       webContext = formatWebContext(webResults);

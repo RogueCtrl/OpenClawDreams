@@ -5,7 +5,7 @@
  * when the API is not exposed.
  */
 
-import { WEB_SEARCH_ENABLED, MAX_WEB_RESULTS_PER_TOPIC } from "./config.js";
+import { getWebSearchEnabled, MAX_WEB_RESULTS_PER_TOPIC } from "./config.js";
 import logger from "./logger.js";
 import type { OpenClawAPI, WebSearchResult } from "./types.js";
 
@@ -25,7 +25,7 @@ export async function searchWebForTopics(
   topics: string[],
   limitPerTopic: number = MAX_WEB_RESULTS_PER_TOPIC
 ): Promise<WebSearchContext[]> {
-  if (!WEB_SEARCH_ENABLED) {
+  if (!getWebSearchEnabled()) {
     logger.debug("Web search disabled by configuration");
     return [];
   }

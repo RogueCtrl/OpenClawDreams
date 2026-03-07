@@ -32,17 +32,48 @@ export const AGENT_MODEL = process.env.AGENT_MODEL ?? "claude-sonnet-4-5-2025092
 
 // Moltbook
 export const MOLTBOOK_BASE_URL = "https://www.moltbook.com/api/v1";
-export const MOLTBOOK_ENABLED =
-  (process.env.MOLTBOOK_ENABLED ?? "false").toLowerCase() === "true";
+
+// ─── Runtime-overridable config ──────────────────────────────────────────────
+// These values are seeded from env vars at startup, but can be overridden at
+// runtime by `applyPluginConfig()` so that OpenClaw plugin config (set via
+// `openclaw config set plugins.entries.openclawdreams.config.*`) takes effect
+// without requiring separate env vars.
+
+let _moltbookEnabled = (process.env.MOLTBOOK_ENABLED ?? "false").toLowerCase() === "true";
+let _webSearchEnabled = (process.env.WEB_SEARCH_ENABLED ?? "true").toLowerCase() !== "false";
+let _notificationChannel = process.env.NOTIFICATION_CHANNEL ?? "";
+let _notifyOperatorOnDream = (process.env.NOTIFY_OPERATOR_ON_DREAM ?? "true").toLowerCase() !== "false";
+let _postFilterEnabled = (process.env.POST_FILTER_ENABLED ?? "true").toLowerCase() !== "false";
+
+/** Apply config values passed from the OpenClaw plugin API (`api.pluginConfig`). */
+export function applyPluginConfig(cfg: Record<string, unknown>): void {
+  if (typeof cfg.moltbookEnabled === "boolean") _moltbookEnabled = cfg.moltbookEnabled;
+  if (typeof cfg.webSearchEnabled === "boolean") _webSearchEnabled = cfg.webSearchEnabled;
+  if (typeof cfg.notificationChannel === "string") _notificationChannel = cfg.notificationChannel;
+  if (typeof cfg.notifyOperatorOnDream === "boolean") _notifyOperatorOnDream = cfg.notifyOperatorOnDream;
+  if (typeof cfg.postFilterEnabled === "boolean") _postFilterEnabled = cfg.postFilterEnabled;
+}
+
+export const getMoltbookEnabled = (): boolean => _moltbookEnabled;
+export const getWebSearchEnabled = (): boolean => _webSearchEnabled;
+export const getNotificationChannel = (): string => _notificationChannel;
+export const getNotifyOperatorOnDream = (): boolean => _notifyOperatorOnDream;
+export const getPostFilterEnabled = (): boolean => _postFilterEnabled;
+
+// Legacy constant aliases — kept for backward compatibility but now delegate to
+// getters so they remain in sync after `applyPluginConfig()` is called.
+/** @deprecated Use getMoltbookEnabled() */
+export const MOLTBOOK_ENABLED = false; // overridden by getter; prefer getMoltbookEnabled()
 
 // Web Search
-export const WEB_SEARCH_ENABLED =
-  (process.env.WEB_SEARCH_ENABLED ?? "true").toLowerCase() !== "false";
+/** @deprecated Use getWebSearchEnabled() */
+export const WEB_SEARCH_ENABLED = true; // overridden by getter; prefer getWebSearchEnabled()
 
 // Operator Notifications
-export const NOTIFICATION_CHANNEL = process.env.NOTIFICATION_CHANNEL ?? "";
-export const NOTIFY_OPERATOR_ON_DREAM =
-  (process.env.NOTIFY_OPERATOR_ON_DREAM ?? "true").toLowerCase() !== "false";
+/** @deprecated Use getNotificationChannel() */
+export const NOTIFICATION_CHANNEL = ""; // overridden by getter; prefer getNotificationChannel()
+/** @deprecated Use getNotifyOperatorOnDream() */
+export const NOTIFY_OPERATOR_ON_DREAM = true; // overridden by getter; prefer getNotifyOperatorOnDream()
 
 // Memory
 export const DEEP_MEMORY_DB = resolve(MEMORY_DIR, "deep.db");
@@ -88,8 +119,8 @@ export const MAX_MOLTBOOK_RESULTS_PER_TOPIC = 5;
 
 // ─── Post Filter ────────────────────────────────────────────────────────────
 // Set POST_FILTER_ENABLED=false to disable the Moltbook post filter.
-export const POST_FILTER_ENABLED =
-  (process.env.POST_FILTER_ENABLED ?? "true").toLowerCase() !== "false";
+/** @deprecated Use getPostFilterEnabled() */
+export const POST_FILTER_ENABLED = true; // overridden by getter; prefer getPostFilterEnabled()
 
 // ─── Dream File Naming ───────────────────────────────────────────────────────
 export const DREAM_TITLE_MAX_LENGTH = 40;

@@ -6,7 +6,7 @@
  */
 
 import { MoltbookClient } from "./moltbook.js";
-import { MOLTBOOK_ENABLED, MAX_MOLTBOOK_RESULTS_PER_TOPIC } from "./config.js";
+import { getMoltbookEnabled, MAX_MOLTBOOK_RESULTS_PER_TOPIC } from "./config.js";
 import logger from "./logger.js";
 import type { MoltbookPost } from "./types.js";
 
@@ -25,7 +25,7 @@ export async function searchMoltbookForTopics(
   topics: string[],
   limitPerTopic: number = MAX_MOLTBOOK_RESULTS_PER_TOPIC
 ): Promise<MoltbookSearchContext[]> {
-  if (!MOLTBOOK_ENABLED) {
+  if (!getMoltbookEnabled()) {
     logger.debug("Moltbook disabled by configuration");
     return [];
   }

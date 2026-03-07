@@ -5,7 +5,7 @@
  * (Telegram, Discord, Slack, etc.) when dreams are generated.
  */
 
-import { NOTIFICATION_CHANNEL, NOTIFY_OPERATOR_ON_DREAM } from "./config.js";
+import { getNotificationChannel, getNotifyOperatorOnDream } from "./config.js";
 import { callWithRetry, WAKING_RETRY_OPTS } from "./llm.js";
 import { DREAM_NOTIFICATION_PROMPT, renderTemplate } from "./persona.js";
 import { getAgentIdentityBlock } from "./identity.js";
@@ -66,12 +66,12 @@ export async function notifyOperatorOfDream(
   api: OpenClawAPI,
   dream: Dream
 ): Promise<boolean> {
-  if (!NOTIFY_OPERATOR_ON_DREAM) {
+  if (!getNotifyOperatorOnDream()) {
     logger.debug("Dream notifications disabled by configuration");
     return false;
   }
 
-  if (!NOTIFICATION_CHANNEL) {
+  if (!getNotificationChannel()) {
     logger.debug("No notification channel configured");
     return false;
   }
@@ -85,9 +85,9 @@ export async function notifyOperatorOfDream(
     // Check if the configured channel is available
     const configuredChannels = await api.channels.getConfigured();
 
-    if (!configuredChannels.includes(NOTIFICATION_CHANNEL)) {
+    if (!configuredChannels.includes(getNotificationChannel())) {
       logger.warn(
-        `Notification channel "${NOTIFICATION_CHANNEL}" not available. ` +
+        `Notification channel "${getNotificationChannel()}" not available. ` +
           `Available channels: ${configuredChannels.join(", ")}`
       );
       return false;
@@ -97,9 +97,9 @@ export async function notifyOperatorOfDream(
     const message = await generateDreamNotification(client, dream);
 
     // Send through the channel
-    await api.channels.send(NOTIFICATION_CHANNEL, message);
+    await api.channels.send(getNotificationChannel(), message);
 
-    logger.info(`Sent dream notification via ${NOTIFICATION_CHANNEL}`);
+    logger.info(`Sent dream notification via ${getNotificationChannel()}`);
     return true;
   } catch (error) {
     logger.error(`Failed to send dream notification: ${error}`);

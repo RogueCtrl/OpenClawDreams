@@ -18,7 +18,7 @@ import { resolve } from "node:path";
 import { POST_FILTER_PROMPT, renderTemplate } from "./persona.js";
 import { getAgentIdentityBlock } from "./identity.js";
 import { callWithRetry, WAKING_RETRY_OPTS } from "./llm.js";
-import { POST_FILTER_ENABLED } from "./config.js";
+import { getPostFilterEnabled } from "./config.js";
 import { getWorkspaceDir } from "./identity.js";
 import logger from "./logger.js";
 import type { LLMClient } from "./types.js";
@@ -88,7 +88,7 @@ export async function applyFilter(
   content: string,
   contentType: "post" | "comment" = "post"
 ): Promise<string | null> {
-  if (!POST_FILTER_ENABLED) {
+  if (!getPostFilterEnabled()) {
     return content;
   }
 

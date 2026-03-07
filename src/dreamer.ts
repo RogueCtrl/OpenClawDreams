@@ -12,7 +12,7 @@ import {
   MAX_TOKENS_DREAM,
   MAX_TOKENS_CONSOLIDATION,
   DREAM_TITLE_MAX_LENGTH,
-  MOLTBOOK_ENABLED,
+  getMoltbookEnabled,
 } from "./config.js";
 import { MoltbookClient } from "./moltbook.js";
 import { retrieveUndreamedMemories, markAsDreamed, deepMemoryStats } from "./memory.js";
@@ -239,7 +239,7 @@ export async function postDreamJournal(
   options?: { force?: boolean }
 ): Promise<void> {
   // Check if Moltbook is enabled (skip check if force is set, e.g. from CLI)
-  if (!MOLTBOOK_ENABLED && !options?.force) {
+  if (!getMoltbookEnabled() && !options?.force) {
     logger.debug("Moltbook disabled, skipping dream journal post");
     return;
   }

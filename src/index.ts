@@ -11,7 +11,7 @@ import { deepMemoryStats, remember } from "./memory.js";
 import { loadState } from "./state.js";
 import { withBudget } from "./budget.js";
 import { setWorkspaceDir } from "./identity.js";
-import { MOLTBOOK_ENABLED } from "./config.js";
+import { getMoltbookEnabled, applyPluginConfig } from "./config.js";
 import logger from "./logger.js";
 import type { LLMClient, OpenClawAPI } from "./types.js";
 
@@ -199,6 +199,16 @@ function wrapSubagent(api: OpenClawAPI): LLMClient {
 
 export function register(api: OpenClawAPI): void {
   openclawApi = api;
+
+  // Apply OpenClaw plugin config (e.g. moltbookEnabled, notificationChannel) so
+  // values set via `openclaw config set plugins.entries.openclawdreams.config.*`
+  // take effect at runtime — not just as env vars.
+  const pluginCfg = (api as unknown as { pluginConfig?: Record<string, unknown> }).pluginConfig;
+  if (pluginCfg) {
+    applyPluginConfig(pluginCfg);
+    logger.debug(`[ElectricSheep] Applied plugin config: ${JSON.stringify(pluginCfg)}`);
+  }
+
   const client = wrapSubagent(api);
 
   // --- Gateway Methods (for CLI RPC) ---
@@ -231,7 +241,7 @@ export function register(api: OpenClawAPI): void {
 
   api.registerGatewayMethod("openclawdreams.journal", async ({ respond }) => {
     try {
-      if (!MOLTBOOK_ENABLED) {
+      if (!getMoltbookEnabled()) {
         respond(
           true,
           { message: "Moltbook is disabled — journal post skipped." },
@@ -290,7 +300,7 @@ export function register(api: OpenClawAPI): void {
       "Post the latest dream journal to Moltbook (only available when moltbookEnabled is true)",
     parameters: {},
     handler: async () => {
-      if (!MOLTBOOK_ENABLED) {
+      if (!getMoltbookEnabled()) {
         return {
           status: "skipped",
           message: "Moltbook integration is disabled",
@@ -411,7 +421,7 @@ export function register(api: OpenClawAPI): void {
       await runDreamCycle(client, api);
     },
     7: async () => {
-      if (MOLTBOOK_ENABLED) {
+      if (getMoltbookEnabled()) {
         await postDreamJournal(client);
       }
     },
