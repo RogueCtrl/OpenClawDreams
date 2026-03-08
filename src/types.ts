@@ -16,7 +16,10 @@ export interface DecryptedMemory {
   id: number;
   timestamp: string;
   category: string;
-  content: Record<string, unknown>;
+  content: Record<string, unknown> & {
+    /** Optional git diff --stat summary of files changed during a session. */
+    file_diffs?: string;
+  };
 }
 
 export interface DeepMemoryStats {
@@ -45,6 +48,8 @@ export interface AgentState {
   last_dream?: string;
   total_dreams?: number;
   latest_dream_title?: string;
+  waking_realization?: string | null;
+  waking_realization_date?: string | null;
   [key: string]: unknown;
 }
 
@@ -158,6 +163,7 @@ export interface OpenClawAPI {
         limit?: number;
       }): Promise<{ messages: Array<Record<string, unknown>> }>;
     };
+    wakeEvent?: (params: { text: string; mode: "now" | "later" }) => Promise<void>;
   };
   memory?: OpenClawMemoryAPI;
   channels?: OpenClawChannelsAPI;
