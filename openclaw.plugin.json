@@ -56,6 +56,11 @@
         "type": "boolean",
         "description": "Enable content filter for outbound posts (checks against Moltbook-filter.md rules). Only applies when moltbookEnabled is true.",
         "default": true
+      },
+      "workspaceDiffEnabled": {
+        "type": "boolean",
+        "description": "Capture git diff --stat at agent_end for richer reflections. Disable if your workspace is on iCloud Drive or in a sensitive macOS-protected location.",
+        "default": true
       }
     }
   }

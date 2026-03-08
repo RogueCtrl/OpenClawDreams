@@ -439,22 +439,38 @@ export function register(api: OpenClawAPI): void {
             summary,
           };
 
-          // Capture workspace file changes if git is available
-          try {
-            const { execSync } = await import("node:child_process");
-            const diffStat = execSync("git diff --stat HEAD", {
-              encoding: "utf-8",
-              timeout: 5000,
-              stdio: ["pipe", "pipe", "pipe"],
-            }).trim();
-            if (diffStat) {
-              memoryEntry.file_diffs = diffStat;
-              api.logger?.info?.(
-                `[ElectricSheep] Captured file diffs: ${diffStat.split("\n").length} lines`
-              );
+          // Capture workspace file changes if git is available and enabled
+          const { getWorkspaceDiffEnabled } = await import("./config.js");
+          const { getWorkspaceDir } = await import("./identity.js");
+          const workspaceDir = getWorkspaceDir();
+          const isSensitivePath =
+            workspaceDir.includes("iCloud") ||
+            workspaceDir.includes("Mobile Documents") ||
+            workspaceDir.includes("Library/") ||
+            workspaceDir.includes("Pictures") ||
+            workspaceDir.includes("Photos");
+          if (getWorkspaceDiffEnabled() && !isSensitivePath) {
+            try {
+              const { execSync } = await import("node:child_process");
+              const diffStat = execSync("git diff --stat HEAD", {
+                cwd: workspaceDir || undefined,
+                encoding: "utf-8",
+                timeout: 5000,
+                stdio: ["pipe", "pipe", "pipe"],
+              }).trim();
+              if (diffStat) {
+                memoryEntry.file_diffs = diffStat;
+                api.logger?.info?.(
+                  `[ElectricSheep] Captured file diffs: ${diffStat.split("\n").length} lines`
+                );
+              }
+            } catch {
+              // git unavailable or no changes — skip silently
             }
-          } catch {
-            // git unavailable or no changes — skip silently
+          } else if (isSensitivePath) {
+            api.logger?.info?.(
+              `[ElectricSheep] Skipping file diffs — workspace path is in a sensitive/iCloud location`
+            );
           }
 
           remember(summary, memoryEntry, "interaction");

@@ -50,6 +50,8 @@ let _postFilterEnabled =
 let _requireApprovalBeforePost =
   (process.env.REQUIRE_APPROVAL_BEFORE_POST ?? "true").toLowerCase() !== "false";
 let _dreamSubmolt = process.env.DREAM_SUBMOLT ?? "dreams";
+let _workspaceDiffEnabled =
+  (process.env.WORKSPACE_DIFF_ENABLED ?? "true").toLowerCase() !== "false";
 
 /** Apply config values passed from the OpenClaw plugin API (`api.pluginConfig`). */
 export function applyPluginConfig(cfg: Record<string, unknown>): void {
@@ -64,6 +66,8 @@ export function applyPluginConfig(cfg: Record<string, unknown>): void {
   if (typeof cfg.requireApprovalBeforePost === "boolean")
     _requireApprovalBeforePost = cfg.requireApprovalBeforePost;
   if (typeof cfg.dreamSubmolt === "string") _dreamSubmolt = cfg.dreamSubmolt;
+  if (typeof cfg.workspaceDiffEnabled === "boolean")
+    _workspaceDiffEnabled = cfg.workspaceDiffEnabled;
 }
 
 export const getMoltbookEnabled = (): boolean => _moltbookEnabled;
@@ -73,6 +77,7 @@ export const getNotifyOperatorOnDream = (): boolean => _notifyOperatorOnDream;
 export const getPostFilterEnabled = (): boolean => _postFilterEnabled;
 export const getRequireApprovalBeforePost = (): boolean => _requireApprovalBeforePost;
 export const getDreamSubmolt = (): string => _dreamSubmolt;
+export const getWorkspaceDiffEnabled = (): boolean => _workspaceDiffEnabled;
 
 // Legacy constant aliases — kept for backward compatibility but now delegate to
 // getters so they remain in sync after `applyPluginConfig()` is called.
