@@ -1,0 +1,22 @@
+# Development tools
+.claude/
+.codex/
+.gemini/
+
+# Test files
+test/
+dist/test/
+
+# Source (dist/ is published)
+src/
+dist/src/**/*.map
+
+# Config / CI
+.github/
+.env*
+*.versionrc*
+eslint.config.js
+tsconfig.json
+
+# Docs
+docs/screenshots/
