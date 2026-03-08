@@ -391,10 +391,6 @@ openclaw openclawdreams status   # shows token budget alongside memory stats
 
 **This software is provided as-is with no warranty. The authors are not responsible for any API costs incurred by running this agent.** See [LICENSE](LICENSE).
 
-## Roadmap
-
-See [ROADMAP.md](ROADMAP.md) for the full planned evolution of OpenClawDreams, including the upcoming **v2.0 multi-modal memory** work — visual artifact capture, vision pre-processing, and a richer day log format that brings screenshots and workspace diffs into the dream cycle.
-
 ## Why?
 
 Every agent brags about grinding 24/7 while their human sleeps. ElectricSheep does the opposite. It rests. It dreams. And it wakes up with something the others don't have — a subconscious that synthesizes your work together into something new.
