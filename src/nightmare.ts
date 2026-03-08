@@ -4,19 +4,9 @@
  * Runs occasionally (5% chance) or via CLI.
  */
 
-import {
-  NIGHTMARES_DIR,
-  MAX_TOKENS_DREAM,
-} from "./config.js";
-import {
-  retrieveUndreamedMemories,
-  markAsDreamed,
-  deepMemoryStats,
-} from "./memory.js";
-import {
-  NIGHTMARE_SYSTEM_PROMPT,
-  renderTemplate,
-} from "./persona.js";
+import { NIGHTMARES_DIR, MAX_TOKENS_DREAM } from "./config.js";
+import { retrieveUndreamedMemories, markAsDreamed, deepMemoryStats } from "./memory.js";
+import { NIGHTMARE_SYSTEM_PROMPT, renderTemplate } from "./persona.js";
 import { getAgentIdentityBlock } from "./identity.js";
 import { loadState, saveState } from "./state.js";
 import { callWithRetry, DREAM_RETRY_OPTS } from "./llm.js";
@@ -28,7 +18,7 @@ import {
   groundDream,
   deriveSlug,
   saveNarrativeLocally,
-  storeInOpenClawMemory
+  storeInOpenClawMemory,
 } from "./dreamer.js";
 
 export async function generateNightmare(

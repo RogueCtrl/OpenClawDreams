@@ -105,7 +105,10 @@ export async function consolidateDream(client: LLMClient, dream: Dream): Promise
 /**
  * Ground the dream: extract a waking realization from the surreal narrative.
  */
-export async function groundDream(client: LLMClient, dream: Dream): Promise<string | null> {
+export async function groundDream(
+  client: LLMClient,
+  dream: Dream
+): Promise<string | null> {
   try {
     const agentIdentity = getAgentIdentityBlock();
     const yesterday = formatDeepMemoryContext();
