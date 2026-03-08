@@ -2,7 +2,15 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
-### [1.3.3](https://github.com/RogueCtrl/OpenClawDreams/compare/v1.2.2...v1.3.3) (2026-03-08)
+### [1.3.4](https://github.com/RogueCtrl/OpenClawDreams/compare/v1.3.3...v1.3.4) (2026-03-08)
+
+
+### Bug Fixes
+
+* skip workspace diff on iCloud/sensitive paths; add workspaceDiffEnabled config ([dfe6b51](https://github.com/RogueCtrl/OpenClawDreams/commit/dfe6b51ac0ded5ba4ee9609089053cddb774221c))
+* add .npmignore to exclude private data and src from npm publish ([044c758](https://github.com/RogueCtrl/OpenClawDreams/commit/044c758))
+
+### [1.3.3](https://github.com/RogueCtrl/OpenClawDreams/compare/v1.3.2...v1.3.3) (2026-03-08)
 
 
 ### Features
