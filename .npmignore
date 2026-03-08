@@ -1,22 +1,30 @@
-# Development tools
-.claude/
-.codex/
-.gemini/
-
-# Test files
-test/
-dist/test/
-
-# Source (dist/ is published)
+# Development
 src/
-dist/src/**/*.map
+*.ts
+!dist/**
 
-# Config / CI
+# Private data — never publish
+data/
+.dream_key
+credentials.json
+
+# Logs
+*.log
+*.log.gz
+
+# Tests & tooling
+__tests__/
+jest.config.*
+.eslintrc*
+.prettierrc
+.prettierignore
+tsconfig*.json
+nodemon.json
+
+# CI/CD
 .github/
-.env*
-*.versionrc*
-eslint.config.js
-tsconfig.json
+.husky/
 
-# Docs
-docs/screenshots/
+# Misc
+.env*
+*.map
