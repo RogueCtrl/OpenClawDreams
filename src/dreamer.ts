@@ -245,7 +245,8 @@ export async function runDreamCycle(
 
     // Notify operator about the dream
     try {
-      const notified = await notifyOperatorOfDream(client, api, dream);
+      const slug = deriveSlug(dream.markdown);
+      const notified = await notifyOperatorOfDream(client, api, dream, slug, insight);
       if (notified) {
         logger.info("Operator notified about dream");
       }

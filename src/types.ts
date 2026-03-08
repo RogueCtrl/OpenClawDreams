@@ -163,6 +163,7 @@ export interface OpenClawAPI {
         limit?: number;
       }): Promise<{ messages: Array<Record<string, unknown>> }>;
     };
+    wakeEvent?: (params: { text: string; mode: "now" | "later" }) => Promise<void>;
   };
   memory?: OpenClawMemoryAPI;
   channels?: OpenClawChannelsAPI;

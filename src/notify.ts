@@ -59,52 +59,63 @@ async function generateDreamNotification(
 /**
  * Notify the operator about a dream through the configured channel.
  *
- * Returns true if notification was sent successfully, false otherwise.
+ * Returns true if notification was sent successfully (including fallbacks), false otherwise.
  */
 export async function notifyOperatorOfDream(
   client: LLMClient,
   api: OpenClawAPI,
-  dream: Dream
+  dream: Dream,
+  title: string,
+  insight: string | null
 ): Promise<boolean> {
   if (!getNotifyOperatorOnDream()) {
     logger.debug("Dream notifications disabled by configuration");
     return false;
   }
 
-  if (!getNotificationChannel()) {
-    logger.debug("No notification channel configured");
-    return false;
-  }
+  // Generate the notification message
+  const message = await generateDreamNotification(client, dream);
 
-  if (!api.channels) {
-    logger.warn("OpenClaw channels API not available");
-    return false;
-  }
+  // Primary: Try configured channel
+  if (api.channels && getNotificationChannel()) {
+    try {
+      const configuredChannels = await api.channels.getConfigured();
 
-  try {
-    // Check if the configured channel is available
-    const configuredChannels = await api.channels.getConfigured();
+      if (configuredChannels.includes(getNotificationChannel())) {
+        await api.channels.send(getNotificationChannel(), message);
+        logger.info(`Sent dream notification via ${getNotificationChannel()}`);
+        return true;
+      }
 
-    if (!configuredChannels.includes(getNotificationChannel())) {
       logger.warn(
         `Notification channel "${getNotificationChannel()}" not available. ` +
           `Available channels: ${configuredChannels.join(", ")}`
       );
-      return false;
+    } catch (error) {
+      logger.error(`Failed to send dream notification via channel: ${error}`);
     }
-
-    // Generate the notification message
-    const message = await generateDreamNotification(client, dream);
-
-    // Send through the channel
-    await api.channels.send(getNotificationChannel(), message);
-
-    logger.info(`Sent dream notification via ${getNotificationChannel()}`);
-    return true;
-  } catch (error) {
-    logger.error(`Failed to send dream notification: ${error}`);
-    return false;
+  } else if (!api.channels) {
+    logger.warn("OpenClaw channels API not available");
+  } else {
+    logger.debug("No notification channel configured");
   }
+
+  // Fallback 1: runtime.wakeEvent
+  if (api.runtime?.wakeEvent) {
+    try {
+      await api.runtime.wakeEvent({ text: message, mode: "now" });
+      logger.info("Sent dream notification via runtime.wakeEvent fallback");
+      return true;
+    } catch (error) {
+      logger.error(`Failed to send dream notification via wakeEvent: ${error}`);
+    }
+  }
+
+  // Fallback 2: Last resort log
+  logger.warn(
+    `DREAM NOTIFICATION FALLBACK:\nTitle: ${title}\nInsight: ${insight || "No insight"}\nMessage: ${message}`
+  );
+  return true;
 }
 
 /**
