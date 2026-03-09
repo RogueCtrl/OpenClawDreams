@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [2.2.0](https://github.com/RogueCtrl/OpenClawDreams/compare/v2.1.0...v2.2.0) (2026-03-09)
+
+
+### Features
+
+* dream entropy enforcement — overlap scoring + re-prompt on recycled territory ([fda1871](https://github.com/RogueCtrl/OpenClawDreams/commit/fda1871399cc35e1965b6b48a96d0f16c9a5df3e))
+* dream entropy enforcement — overlap scoring + re-prompt on recycled territory ([8745a73](https://github.com/RogueCtrl/OpenClawDreams/commit/8745a7394354f2f9be3ab2cf924b5cc48985d67b)), closes [#81](https://github.com/RogueCtrl/OpenClawDreams/issues/81)
+
 ## [2.1.0](https://github.com/RogueCtrl/OpenClawDreams/compare/v2.0.2...v2.1.0) (2026-03-09)
 
 
