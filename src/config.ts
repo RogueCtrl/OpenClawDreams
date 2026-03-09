@@ -89,6 +89,15 @@ let _workspaceDiffEnabled =
   (process.env.WORKSPACE_DIFF_ENABLED ?? "true").toLowerCase() !== "false";
 let _metaLoopThreshold = parseInt(process.env.META_LOOP_THRESHOLD ?? "3", 10);
 let _entropyOverlapThreshold = parseFloat(process.env.ENTROPY_OVERLAP_THRESHOLD ?? "0.5");
+let _communityIngestionEnabled =
+  (process.env.COMMUNITY_INGESTION_ENABLED ?? "false").toLowerCase() === "true";
+let _communityIngestionSubmolts = (
+  process.env.COMMUNITY_INGESTION_SUBMOLTS ?? "dreams,philosophy"
+)
+  .split(",")
+  .map((s) => s.trim())
+  .filter(Boolean);
+let _communityIngestionLimit = parseInt(process.env.COMMUNITY_INGESTION_LIMIT ?? "5", 10);
 
 /** Apply config values passed from the OpenClaw plugin API (`api.pluginConfig`). */
 export function applyPluginConfig(cfg: Record<string, unknown>): void {
@@ -109,6 +118,12 @@ export function applyPluginConfig(cfg: Record<string, unknown>): void {
     _metaLoopThreshold = cfg.metaLoopThreshold;
   if (typeof cfg.entropyOverlapThreshold === "number")
     _entropyOverlapThreshold = cfg.entropyOverlapThreshold;
+  if (typeof cfg.communityIngestionEnabled === "boolean")
+    _communityIngestionEnabled = cfg.communityIngestionEnabled;
+  if (Array.isArray(cfg.communityIngestionSubmolts))
+    _communityIngestionSubmolts = cfg.communityIngestionSubmolts as string[];
+  if (typeof cfg.communityIngestionLimit === "number")
+    _communityIngestionLimit = cfg.communityIngestionLimit;
 }
 
 export const getMoltbookEnabled = (): boolean => _moltbookEnabled;
@@ -120,6 +135,9 @@ export const getDreamSubmolt = (): string => _dreamSubmolt;
 export const getWorkspaceDiffEnabled = (): boolean => _workspaceDiffEnabled;
 export const getMetaLoopThreshold = (): number => _metaLoopThreshold;
 export const getEntropyOverlapThreshold = (): number => _entropyOverlapThreshold;
+export const getCommunityIngestionEnabled = (): boolean => _communityIngestionEnabled;
+export const getCommunityIngestionSubmolts = (): string[] => _communityIngestionSubmolts;
+export const getCommunityIngestionLimit = (): number => _communityIngestionLimit;
 
 // Legacy constant aliases — kept for backward compatibility but now delegate to
 // getters so they remain in sync after `applyPluginConfig()` is called.

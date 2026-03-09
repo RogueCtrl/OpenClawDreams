@@ -69,6 +69,7 @@ async function storeInOpenClawMemory(
       timestamp: new Date().toISOString(),
       hasMoltbookContext: !!context.moltbookContext,
       hasWebContext: !!context.webContext,
+      hasCommunityContext: !!context.communityContext,
     });
     logger.info("Stored synthesis in OpenClaw memory");
   } catch (error) {
@@ -164,6 +165,7 @@ export async function runReflectionCycle(
         operator: true,
         moltbook: !!context.moltbookContext,
         web: !!context.webContext,
+        community: !!context.communityContext,
       },
     },
     "reflection"

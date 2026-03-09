@@ -228,7 +228,18 @@ export interface SynthesisContext {
   operatorContext: string;
   moltbookContext?: string;
   webContext?: string;
+  communityContext?: string;
   topics: string[];
+}
+
+// ─── Community Ingestion ─────────────────────────────────────────────────────
+
+export interface CommunityPost {
+  id: string;
+  submolt: string;
+  author: string;
+  content: string;
+  created_at: string; // ISO string
 }
 
 // ─── Plugin Config ──────────────────────────────────────────────────────────
