@@ -126,7 +126,11 @@ export function registerCommands(parent: Command): void {
   parent
     .command("dreams")
     .description("List saved dream journals")
-    .action(() => {
+    .option("--dry-run", "Run without persisting state")
+    .action((opts: { dryRun?: boolean }) => {
+      if (opts.dryRun) {
+        console.log(chalk.yellow.bold("\n[DRY RUN] Listing dreams (no state will be saved)...\n"));
+      }
       let dreamFiles: string[];
       try {
         dreamFiles = readdirSync(getDreamsDir())
@@ -159,7 +163,11 @@ export function registerCommands(parent: Command): void {
   parent
     .command("nightmares")
     .description("List saved nightmare journals")
-    .action(() => {
+    .option("--dry-run", "Run without persisting state")
+    .action((opts: { dryRun?: boolean }) => {
+      if (opts.dryRun) {
+        console.log(chalk.yellow.bold("\n[DRY RUN] Listing nightmares (no state will be saved)...\n"));
+      }
       let nightmareFiles: string[];
       try {
         nightmareFiles = readdirSync(getNightmaresDir())
