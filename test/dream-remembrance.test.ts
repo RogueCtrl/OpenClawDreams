@@ -206,27 +206,27 @@ describe("Dream Probability Space (Integration)", () => {
 
   it("ensureBackfilled recovers dreams from disk", async () => {
     const { ensureBackfilled } = await import("../src/backfill.js");
-    
+
     // Close existing DB connection
     closeDb();
-    
+
     // Create a new isolated test dir for backfill specifically
     const backfillDir = mkdtempSync(join(tmpdir(), "es-backfill-test-"));
     process.env.OPENCLAWDREAMS_DATA_DIR = backfillDir;
-    
+
     // Reset config/state for new dir
     const { getDreamsDir, ensureDirectoriesExist } = await import("../src/config.js");
     ensureDirectoriesExist();
-    
+
     const dDir = getDreamsDir();
     const backfillFile = join(dDir, "2026-01-01_Backfill_Test.md");
     writeFileSync(backfillFile, "# Backfill Dream\nContent");
-    
+
     await ensureBackfilled();
-    
+
     const remembrances = getDreamRemembrances();
-    assert.ok(remembrances.some(r => r.filename === "2026-01-01_Backfill_Test.md"));
-    
+    assert.ok(remembrances.some((r) => r.filename === "2026-01-01_Backfill_Test.md"));
+
     // Cleanup
     closeDb();
     rmSync(backfillDir, { recursive: true, force: true });
