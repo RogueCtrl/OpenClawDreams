@@ -35,7 +35,18 @@ export function registerCommands(parent: Command): void {
     .description("Register a new agent on Moltbook")
     .requiredOption("--name <name>", "Agent name on Moltbook")
     .requiredOption("--description <desc>", "Agent description")
-    .action(async (opts: { name: string; description: string }) => {
+    .option("--dry-run", "Run without persisting state")
+    .action(async (opts: { name: string; description: string; dryRun?: boolean }) => {
+      if (opts.dryRun) {
+        console.log(
+          chalk.yellow.bold("\n[DRY RUN] Registering agent (no state will be saved)...\n")
+        );
+        console.log(`${chalk.bold("Name:")} ${opts.name}`);
+        console.log(`${chalk.bold("Description:")} ${opts.description}`);
+        console.log(chalk.yellow("\n--- End Simulation ---\n"));
+        return;
+      }
+
       const { MoltbookClient } = await import("./moltbook.js");
       const client = new MoltbookClient();
       const result = await client.register(opts.name, opts.description);
@@ -285,7 +296,11 @@ export function registerCommands(parent: Command): void {
     .action(async (opts: { dryRun?: boolean }) => {
       const dryRun = opts.dryRun ?? false;
       if (dryRun) {
-        console.log(chalk.cyan.bold("\nTriggering reflection cycle (dry run)...\n"));
+        console.log(
+          chalk.yellow.bold(
+            "\n[DRY RUN] Triggering reflection cycle (no state will be saved)...\n"
+          )
+        );
       } else {
         console.log(chalk.cyan.bold("\nTriggering reflection cycle...\n"));
       }
@@ -311,10 +326,30 @@ export function registerCommands(parent: Command): void {
       "--sim-remembered-nightmare",
       "Force simulation of a remembered nightmare path"
     )
+    .option("--dry-run", "Run without persisting state")
     .action(
-      async (opts: { simRemembered?: boolean; simRememberedNightmare?: boolean }) => {
-        if (opts.simRemembered || opts.simRememberedNightmare) {
-          console.log(chalk.magenta.bold("\nSimulating dream remembrance path...\n"));
+      async (opts: {
+        simRemembered?: boolean;
+        simRememberedNightmare?: boolean;
+        dryRun?: boolean;
+      }) => {
+        const isSim = opts.simRemembered || opts.simRememberedNightmare;
+        const dryRun = isSim || opts.dryRun;
+
+        if (dryRun) {
+          if (isSim) {
+            console.log(
+              chalk.yellow.bold(
+                "\n[DRY RUN] Simulating dream remembrance path (no state will be saved)...\n"
+              )
+            );
+          } else {
+            console.log(
+              chalk.yellow.bold(
+                "\n[DRY RUN] Triggering dream cycle (no state will be saved)...\n"
+              )
+            );
+          }
         } else {
           console.log(chalk.magenta.bold("\nTriggering dream cycle...\n"));
         }
@@ -323,9 +358,9 @@ export function registerCommands(parent: Command): void {
         const { client } = await createDirectClient();
         try {
           const simOptions = {
-            forceRemembrance: opts.simRemembered || opts.simRememberedNightmare,
+            forceRemembrance: isSim,
             forceNightmare: opts.simRememberedNightmare,
-            dryRun: opts.simRemembered || opts.simRememberedNightmare,
+            dryRun,
           };
 
           const dream = await runDreamCycle(client, undefined, simOptions);
@@ -351,14 +386,31 @@ export function registerCommands(parent: Command): void {
   parent
     .command("nightmare")
     .description("Manually trigger a nightmare cycle")
-    .action(async () => {
-      console.log(chalk.red.bold("\nTriggering nightmare cycle...\n"));
+    .option("--dry-run", "Run without persisting state")
+    .action(async (opts: { dryRun?: boolean }) => {
+      if (opts.dryRun) {
+        console.log(
+          chalk.yellow.bold(
+            "\n[DRY RUN] Triggering nightmare cycle (no state will be saved)...\n"
+          )
+        );
+      } else {
+        console.log(chalk.red.bold("\nTriggering nightmare cycle...\n"));
+      }
       const { runNightmareCycle } = await import("./nightmare.js");
       const { client } = await createDirectClient();
       try {
-        const nightmare = await runNightmareCycle(client);
+        const nightmare = await runNightmareCycle(client, undefined, {
+          dryRun: opts.dryRun,
+        });
         if (nightmare) {
-          console.log(chalk.green.bold("\nNightmare cycle complete.\n"));
+          if (opts.dryRun) {
+            console.log(chalk.cyan.bold("\n--- Simulation Output ---\n"));
+            console.log(nightmare.markdown);
+            console.log(chalk.cyan.bold("\n--- End Simulation ---\n"));
+          } else {
+            console.log(chalk.green.bold("\nNightmare cycle complete.\n"));
+          }
         } else {
           console.log(chalk.yellow("\nNo undreamed memories. Sleepless night.\n"));
         }
@@ -384,7 +436,7 @@ export function registerCommands(parent: Command): void {
       const { client } = await createDirectClient();
 
       if (opts.dryRun) {
-        console.log(chalk.yellow.bold("\n--- DRY RUN: Moltbook Post ---\n"));
+        console.log(chalk.yellow.bold("\n[DRY RUN] --- Moltbook Post ---\n"));
         const dream = loadLatestDream();
         if (!dream) {
           console.log(chalk.red("No dreams found to post."));

@@ -1,5 +1,5 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
-import { resolve, basename } from "node:path";
+import { resolve } from "node:path";
 import {
   getDreamsDir,
   getNightmaresDir,
@@ -7,11 +7,7 @@ import {
   getMoltbookBackfillEnabled,
   AGENT_NAME,
 } from "./config.js";
-import {
-  storeDeepMemory,
-  registerDream,
-  getDreamRemembrances,
-} from "./memory.js";
+import { storeDeepMemory, registerDream, getDreamRemembrances } from "./memory.js";
 import { loadState, saveState } from "./state.js";
 import logger from "./logger.js";
 import { MoltbookClient } from "./moltbook.js";
@@ -101,7 +97,9 @@ export async function ensureBackfilled(): Promise<void> {
         // Try to derive a filename to see if we already have it.
         // title might be "Morning Reflection: The_Room_That_Remembers_Itself"
         const cleanTitle = post.title.replace(/^Morning Reflection:\s*/i, "").trim();
-        const dateStr = post.created_at ? post.created_at.slice(0, 10) : new Date().toISOString().slice(0, 10);
+        const dateStr = post.created_at
+          ? post.created_at.slice(0, 10)
+          : new Date().toISOString().slice(0, 10);
         // The slug usually replaces spaces with underscores
         const slug = cleanTitle.replace(/ /g, "_");
         const filename = `${dateStr}_${slug}.md`;
@@ -109,7 +107,12 @@ export async function ensureBackfilled(): Promise<void> {
         if (existing.has(filename)) continue;
 
         const deepMemoryId = storeDeepMemory(
-          { text_summary: cleanTitle, markdown: post.content, isNightmare: false, moltbookId: post.id },
+          {
+            text_summary: cleanTitle,
+            markdown: post.content,
+            isNightmare: false,
+            moltbookId: post.id,
+          },
           "dream"
         );
         registerDream(filename, cleanTitle, dateStr, {

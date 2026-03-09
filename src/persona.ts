@@ -272,8 +272,8 @@ THE NEW VISION (TODAY'S DREAM):
 {{dream2}}`;
 
 /**
-* Simple template substitution for {{placeholder}} patterns.
-*/
+ * Simple template substitution for {{placeholder}} patterns.
+ */
 
 export function renderTemplate(template: string, vars: Record<string, string>): string {
   let result = template;

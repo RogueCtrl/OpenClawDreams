@@ -77,7 +77,9 @@ export const MOLTBOOK_BASE_URL = "https://www.moltbook.com/api/v1";
 
 let _moltbookEnabled = (process.env.MOLTBOOK_ENABLED ?? "false").toLowerCase() === "true";
 let _moltbookBackfillEnabled =
-  (process.env.MOLTBOOK_BACKFILL_ENABLED ?? (_moltbookEnabled ? "true" : "false")).toLowerCase() !== "false";
+  (
+    process.env.MOLTBOOK_BACKFILL_ENABLED ?? (_moltbookEnabled ? "true" : "false")
+  ).toLowerCase() !== "false";
 let _webSearchEnabled =
   (process.env.WEB_SEARCH_ENABLED ?? "true").toLowerCase() !== "false";
 let _notificationChannel = process.env.NOTIFICATION_CHANNEL ?? "";

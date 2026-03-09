@@ -14,7 +14,9 @@ import type { LLMClient } from "../src/types.js";
 const { getDreamsDir } = await import("../src/config.js");
 const dreamsDir = getDreamsDir();
 if (!dreamsDir.startsWith(testDir)) {
-  console.error(`FATAL: dreamsDir (${dreamsDir}) is not isolated to testDir (${testDir})`);
+  console.error(
+    `FATAL: dreamsDir (${dreamsDir}) is not isolated to testDir (${testDir})`
+  );
   process.exit(1);
 }
 

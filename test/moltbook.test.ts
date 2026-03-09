@@ -20,7 +20,7 @@ const fakeHome = mkdtempSync(join(tmpdir(), "es-moltbook-test-home-"));
 process.env.HOME = fakeHome;
 
 const { MoltbookClient } = await import("../src/moltbook.js");
-const { getCredentialsFile, getStableCredentialsFile } = await import("../src/config.js");
+const { getCredentialsFile } = await import("../src/config.js");
 const { closeLogger } = await import("../src/logger.js");
 
 function mockFetchJson(body: Record<string, unknown>, status = 200): typeof fetch {

@@ -27,7 +27,6 @@ import logger from "./logger.js";
 import type { LLMClient, OpenClawAPI, SchedulerState } from "./types.js";
 import { execSync } from "node:child_process";
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
-import { resolve } from "node:path";
 import { randomUUID } from "node:crypto";
 
 // Ensure directories exist on startup
