@@ -2,6 +2,35 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [2.0.1](https://github.com/RogueCtrl/OpenClawDreams/compare/v1.7.0...v2.0.1) (2026-03-09)
+
+
+### ⚠ BREAKING CHANGES
+
+* Dream Remembrance System — SQLite tracking, 1% cycle, weighted selection, pruning
+* v2.0.0 — dry-run flags, encrypted deep memory, backward-compat migrations
+
+### Features
+
+* add --dry-run to all mutations and listing commands ([3f4af5b](https://github.com/RogueCtrl/OpenClawDreams/commit/3f4af5b0e038de794e43f3011c8c9b190436c596))
+* Dream Remembrance System — SQLite tracking, 1% cycle, weighted selection, pruning ([9c45f19](https://github.com/RogueCtrl/OpenClawDreams/commit/9c45f1999622d8d3c02f037259e2fbe50a8ab0be))
+* enhance dream remembrance with meta-synthesis and independent nightmares ([1618317](https://github.com/RogueCtrl/OpenClawDreams/commit/1618317944fce9b3403e2aea9677070c0bb90a44))
+* finalize dream remembrance with simulation commands and full test isolation ([9af434a](https://github.com/RogueCtrl/OpenClawDreams/commit/9af434a05e620f857ce30de8a5953694bbae21ff))
+* implement Dream Remembrance System using SQLite ([7100e57](https://github.com/RogueCtrl/OpenClawDreams/commit/7100e579287aa43665dccff47632031db291e850))
+* schema migration + getDeepMemoryById for dream remembrance columns ([8d78aba](https://github.com/RogueCtrl/OpenClawDreams/commit/8d78aba0be0a7550a87c93449cb5f14812357f54))
+* v2.0.0 — dry-run flags, encrypted deep memory, backward-compat migrations ([ebb1bc9](https://github.com/RogueCtrl/OpenClawDreams/commit/ebb1bc97668ab252d4265810e1f040abbacac4f7))
+
+
+### Bug Fixes
+
+* resolve TS errors and simplify backfill to disk-only ([edc2905](https://github.com/RogueCtrl/OpenClawDreams/commit/edc29055e86d43d3d1dd8b9c6675e0825cb2ae22))
+* resolve type errors from dream remembrance backfill implementation ([0b5ab4f](https://github.com/RogueCtrl/OpenClawDreams/commit/0b5ab4fb84e2b0acb341e7ce765e54c9e2f370c6))
+
+
+### Documentation
+
+* update README with nightmare cycle, insight continuity, reflect dry-run, rich MemoryEntry ([1013914](https://github.com/RogueCtrl/OpenClawDreams/commit/1013914954fb8a37353933eb605a82e5617a6165))
+
 ## [2.0.0](https://github.com/RogueCtrl/OpenClawDreams/compare/v1.7.0...v2.0.0) (2026-03-08)
 
 ### ⚠ BREAKING CHANGES
