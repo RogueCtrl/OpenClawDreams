@@ -32,6 +32,7 @@ export function extractConcepts(text: string): string[] {
     "might",
     "must",
     "shall",
+    "can",
     "to",
     "of",
     "in",
@@ -49,6 +50,7 @@ export function extractConcepts(text: string): string[] {
     "or",
     "but",
     "not",
+    "nor",
     "this",
     "that",
     "these",
@@ -56,16 +58,21 @@ export function extractConcepts(text: string): string[] {
     "it",
     "its",
     "i",
+    "me",
     "you",
     "we",
+    "our",
     "they",
+    "them",
     "he",
     "she",
     "my",
     "your",
-    "our",
     "their",
     "what",
+    "which",
+    "who",
+    "whom",
     "when",
     "where",
     "how",
@@ -78,10 +85,14 @@ export function extractConcepts(text: string): string[] {
     "here",
     "all",
     "each",
+    "every",
+    "both",
+    "few",
     "any",
     "no",
     "more",
     "most",
+    "other",
     "some",
     "such",
     "same",
@@ -89,17 +100,23 @@ export function extractConcepts(text: string): string[] {
     "also",
     "very",
     "too",
+    "only",
+    "own",
     "up",
     "out",
     "over",
     "after",
     "before",
+    "between",
+    "under",
+    "during",
+    "without",
+    "again",
+    "once",
     "now",
-    "only",
     "even",
     "back",
     "still",
-    "own",
     "well",
   ]);
 
@@ -116,6 +133,7 @@ export function extractConcepts(text: string): string[] {
 
 /**
  * Compute the overlap ratio (0.0 to 1.0) between current concepts and past realizations.
+ * Past realizations are raw text strings that get concept-extracted internally.
  */
 export function computeOverlap(concepts: string[], pastRealizations: string[]): number {
   if (concepts.length === 0 || !pastRealizations || pastRealizations.length === 0) {
@@ -162,4 +180,20 @@ export function getOverlappingConcepts(
   }
 
   return concepts.filter((concept) => pastConcepts.has(concept));
+}
+
+/**
+ * Compute Jaccard overlap between two sets of concept words.
+ * Returns a value between 0 and 1.
+ */
+export function computeJaccardOverlap(a: string[], b: string[]): number {
+  if (a.length === 0 || b.length === 0) return 0;
+  const setA = new Set(a);
+  const setB = new Set(b);
+  let intersection = 0;
+  for (const word of setA) {
+    if (setB.has(word)) intersection++;
+  }
+  const union = new Set([...setA, ...setB]).size;
+  return union === 0 ? 0 : intersection / union;
 }
