@@ -14,7 +14,9 @@ An [OpenClaw](https://github.com/openclaw) plugin (≥2026.3.7) that gives your 
 
 Throughout the day, OpenClawDreams captures summaries of your conversations with your agent and encrypts them into a local store. On a regular schedule, it runs a **reflection cycle** — decrypting recent interactions, extracting topics, and performing contextualized searches against the web and (optionally) [Moltbook](https://moltbook.com), a social network for AI agents. The results are synthesized into a structured understanding of what you've been working on together and encrypted back into the store. None of this is visible to the waking agent — encryption keeps OpenClawDreams's internal data out of the agent's context window entirely.
 
-At night, a **dream cycle** decrypts everything — the raw interactions and the enriched reflections — and generates a surreal narrative that recombines the day's events. The dream process produces two outputs: a consolidated insight pushed into OpenClaw's persistent memory (where the agent can find it naturally), and optionally a reflection post to Moltbook. The agent can then notify you: *"I had a dream last night..."* — opening a conversation about the themes and connections that surfaced.
+At night, a **dream cycle** decrypts everything — the raw interactions and the enriched reflections — and generates a surreal narrative that recombines the day's events. There's a 5% chance any given night produces a **nightmare** instead — a darker, more unsettling variant that runs through the same downstream pipeline. The dream process produces two outputs: a consolidated insight pushed into OpenClaw's persistent memory (where the agent can find it naturally), and optionally a reflection post to Moltbook. The agent can then notify you: *"I had a dream last night..."* — opening a conversation about the themes and connections that surfaced.
+
+To prevent the system from grinding the same cognitive groove indefinitely, a **waking realization** (groundDream) anchors the surreal dream output to yesterday's actual activity — giving it the depth of dreaming with the clarity of reason. Past realizations are tracked as `explored_territory` and injected into subsequent dream and reflection prompts to steer the system toward novel ground.
 
 ## Architecture
 
@@ -38,18 +40,23 @@ At night, a **dream cycle** decrypts everything — the raw interactions and the
 │                     NIGHTTIME (Dream Cycle)                     │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
-│  Deep Memory ──► Decrypt ──► Dream Generation ──► groundDream() │
-│  (all undreamed)                  (LLM)              (LLM)      │
-│                                                        │        │
-│                                            ┌───────────┴──────┐ │
-│                                            │                  │ │
-│                                            ▼                  ▼ │
-│                                       OpenClaw          Notify  │
-│                                        Memory           Operator│
-│                                      (insight +                 │
-│                                      waking realization)        │
+│  Deep Memory ──► Decrypt ──► [5% nightmare] ──► Nightmare Gen   │
+│  (all undreamed)                  │  (LLM)                      │
+│                                   │ [95% dream]                 │
+│                                   ▼                             │
+│                            Dream Generation ──► groundDream()   │
+│                                (LLM)              (LLM)         │
+│                                                     │           │
+│                                         ┌───────────┴─────────┐ │
+│                                         │                     │ │
+│                                         ▼                     ▼ │
+│                                    OpenClaw             Notify  │
+│                                     Memory              Operator│
+│                                   (insight +                    │
+│                                   waking realization,           │
+│                                   explored_territory)           │
 │                                                                 │
-│                                        Moltbook (optional)      │
+│                                     Moltbook (optional)         │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
 ```
@@ -79,9 +86,11 @@ The agent cycles through states on a 24-hour loop. Transitions are driven by an 
           │  │  DREAMING   │<─────────────────────┘       │
           │  │             │                              │
           │  │ • decrypt all undreamed memories           │
+          │  │ • 5% → nightmare / 95% → dream             │
           │  │ • generate surreal narrative               │
-          │  │ • consolidate insight → OpenClaw memory    │
           │  │ • groundDream() → Waking Realization       │
+          │  │ • update explored_territory                │
+          │  │ • consolidate insight → OpenClaw memory    │
           │  │ • notify operator ("I had a dream...")     │
           │  └─────┬──────┘                               │
           │        │                                      │
@@ -215,8 +224,8 @@ Once loaded, the extension registers:
 | Tool | `openclawdreams_status` | Show deep memory stats and agent state |
 | Hook | `before_agent_start` | Captures workspace directory for identity file loading |
 | Hook | `agent_end` | Encrypts conversation summary + workspace file diffs into deep memory |
-| Schedule | Reflection cycle | 8am, 12pm, 4pm, 8pm |
-| Schedule | Dream cycle | 2:00 AM |
+| Schedule | Reflection cycle | 12am, 8am, 12pm, 4pm, 8pm (5×/day) |
+| Schedule | Dream cycle | 2:00 AM (5% chance: nightmare) |
 | Schedule | Morning journal | 7:00 AM (only if moltbookEnabled) |
 
 All LLM calls route through the OpenClaw gateway — no separate API key needed.
@@ -240,10 +249,12 @@ OpenClawDreams includes CLI commands for both inspecting agent state and manuall
 ### Manual Triggers
 
 ```bash
-openclaw openclawdreams reflect   # Run a reflection cycle now (analyze conversations, synthesize insights)
-openclaw openclawdreams dream     # Run a dream cycle now (consolidate memories into a dream narrative)
-openclaw openclawdreams post      # Post latest dream to Moltbook (requires moltbookEnabled)
-openclaw openclawdreams post -d   # Dry run: see what would be posted without publishing
+openclaw openclawdreams reflect             # Run a reflection cycle now (analyze conversations, synthesize insights)
+openclaw openclawdreams reflect --dry-run   # Dry run: print synthesis to stdout, skip storage
+openclaw openclawdreams dream               # Run a dream cycle now (consolidate memories into a dream narrative)
+openclaw openclawdreams nightmare           # Force a nightmare cycle (bypasses the 5% probability roll)
+openclaw openclawdreams post                # Post latest dream to Moltbook (requires moltbookEnabled)
+openclaw openclawdreams post -d             # Dry run: see what would be posted without publishing
 ```
 
 These resolve your Anthropic API key from OpenClaw's auth profiles automatically and call the Anthropic API directly — no daemon gateway required.
@@ -251,8 +262,9 @@ These resolve your Anthropic API key from OpenClaw's auth profiles automatically
 ### Inspection
 
 ```bash
-openclaw openclawdreams status    # Show agent state, deep memory stats, and token budget
-openclaw openclawdreams dreams    # List saved dream journal entries
+openclaw openclawdreams status      # Show agent state, deep memory stats, and token budget
+openclaw openclawdreams dreams      # List saved dream journal entries
+openclaw openclawdreams nightmares  # List saved nightmare journal entries
 ```
 
 ### Registration
@@ -303,7 +315,11 @@ Everything is encrypted with AES-256-GCM and written to a SQLite database. The w
 
 **Reflection syntheses** (daytime cycles): The reflection cycle decrypts recent interactions, extracts topics, searches the web and Moltbook for context, synthesizes the results, and encrypts the synthesis back into the store.
 
-**Dream consolidations** (nighttime): The dream cycle decrypts all undreamed entries, generates a narrative, and extracts a consolidated insight. The insight is pushed into OpenClaw's persistent memory — the only channel through which ElectricSheep's work surfaces to the waking agent. Dream narratives are also saved locally as markdown files.
+**Dream consolidations** (nighttime): The dream cycle decrypts all undreamed entries, generates a narrative, and extracts a consolidated insight. There is a 5% chance any given cycle produces a **nightmare** instead — a darker variant that runs through the same downstream pipeline (groundDream, consolidation, notification). The insight is pushed into OpenClaw's persistent memory — the only channel through which ElectricSheep's work surfaces to the waking agent. Dream and nightmare narratives are saved locally as markdown files in `data/dreams/` and `data/nightmares/` respectively.
+
+**Waking realizations and explored territory**: After each dream cycle, `groundDream()` produces a waking realization that anchors the surreal output to yesterday's concrete activity. Realizations are accumulated in `past_realizations[]` in state and injected into subsequent dream and reflection prompts as `{{explored_territory}}` — steering the system away from ground it has already covered and encouraging novel synthesis over time.
+
+**Day log entries** (via `agent_end` hook): Each session end captures a structured `MemoryEntry` containing a text summary, file diff context (`git diff --stat`), tool call metadata, and topic tags. Old plain-string entries are wrapped transparently on read — backward compatible.
 
 Entries accumulate in deep memory until they are "dreamed," at which point they're marked as processed.
 
@@ -379,6 +395,7 @@ ElectricSheep includes a **best-effort** daily token budget that halts LLM calls
 | Env Variable | Default | Description |
 |---|---|---|
 | `MAX_DAILY_TOKENS` | `800000` | Max tokens per day (resets midnight UTC). Set to `0` to disable. |
+| `NIGHTMARE_CHANCE` | `0.05` | Probability (0–1) of a nightmare cycle instead of a dream. Set to `0` to disable nightmares entirely. |
 
 The default of 800K tokens corresponds to **$20/day at Opus 4.5 output pricing**.
 
