@@ -31,7 +31,10 @@ import {
   registerDream,
   incrementRememberCount,
   selectDreamToRemember,
+  storeDeepMemory,
+  getDeepMemoryById,
 } from "./memory.js";
+import { ensureBackfilled } from "./backfill.js";
 import {
   DREAM_SYSTEM_PROMPT,
   NIGHTMARE_SYSTEM_PROMPT,
@@ -55,19 +58,18 @@ const REMEMBRANCE_CHANCE = parseFloat(process.env.REMEMBRANCE_CHANCE ?? "0.01");
 // ─── Dream Remembrance ───────────────────────────────────────────────────────
 
 /**
- * Prune dream files older than today.
+ * Prune dream files, keeping only the most recent one.
  * SQLite records are KEPT — they outlive the files, enabling future
  * remembrance by title even when file is gone.
  */
-export function pruneOldDreams(dir: string, today: string): void {
+export function pruneOldDreams(dir: string, currentFile: string): void {
   if (!existsSync(dir)) return;
   const files = readdirSync(dir).filter((f) => f.endsWith(".md"));
   for (const file of files) {
-    const fileDate = file.slice(0, 10); // YYYY-MM-DD prefix
-    if (fileDate < today) {
+    if (file !== currentFile) {
       try {
         unlinkSync(resolve(dir, file));
-        logger.info(`Pruned old dream: ${file}`);
+        logger.info(`Pruned old dream file: ${file}`);
       } catch (e) {
         logger.warn(`Failed to prune dream ${file}: ${e}`);
       }
@@ -264,6 +266,10 @@ export async function runDreamCycle(
 ): Promise<Dream | null> {
   logger.info("ElectricSheep dream cycle starting");
 
+  if (!simOptions?.dryRun) {
+    await ensureBackfilled();
+  }
+
   const stats = deepMemoryStats();
   logger.debug(
     `Deep memory: ${stats.total_memories} total, ${stats.undreamed} undreamed`
@@ -285,19 +291,40 @@ export async function runDreamCycle(
 
   // 1% chance to remember a previous dream instead of generating a new one
   let rememberedDream: string | null = null;
+  let chosenFilename: string | null = null;
   const shouldRemember = simOptions?.forceRemembrance || Math.random() < REMEMBRANCE_CHANCE;
   logger.debug(`Dream cycle: shouldRemember=${shouldRemember} (force=${simOptions?.forceRemembrance})`);
   if (shouldRemember) {
     const today = new Date().toISOString().slice(0, 10);
     const chosen = selectDreamToRemember(today);
     if (chosen) {
-      const filepath = resolve(getDreamsDir(), chosen);
-      if (existsSync(filepath)) {
-        if (!simOptions?.dryRun) {
-          incrementRememberCount(chosen);
+      chosenFilename = chosen.filename;
+      if (!simOptions?.dryRun) {
+        incrementRememberCount(chosen.filename);
+      }
+      
+      let fetchedContent: string | null = null;
+      if (chosen.deep_memory_id) {
+        const mem = getDeepMemoryById(chosen.deep_memory_id);
+        if (mem && mem.content && typeof mem.content.markdown === "string") {
+          fetchedContent = mem.content.markdown;
+        } else if (mem && typeof mem.content.text_summary === "string") {
+          // Fallback if markdown isn't there for some reason
+          fetchedContent = mem.content.text_summary;
         }
-        rememberedDream = readFileSync(filepath, "utf-8");
-        logger.info(`Remembering past dream: ${chosen} (dream 1 of 2 tonight)`);
+      }
+      
+      if (!fetchedContent) {
+        // Fallback to disk
+        const filepath = resolve(getDreamsDir(), chosen.filename);
+        if (existsSync(filepath)) {
+          fetchedContent = readFileSync(filepath, "utf-8");
+        }
+      }
+
+      if (fetchedContent) {
+        rememberedDream = fetchedContent;
+        logger.info(`Remembering past dream: ${chosen.filename} (dream 1 of 2 tonight)`);
       }
     }
   }
@@ -307,6 +334,7 @@ export async function runDreamCycle(
   if (isNightmare) {
     logger.info("Tonight is a nightmare (5% trigger fired)");
   }
+
 
   const state = loadState();
   const pastRealizations: string[] =
@@ -344,11 +372,24 @@ export async function runDreamCycle(
   const filepath = saveNarrativeLocally(dream, getDreamsDir(), dateStr);
   logger.info(`Saved to ${filepath}`);
 
-  // Register dream in remembrance map and prune files older than today
   const savedFilename = basename(filepath);
   const savedSlug = deriveSlug(dream.markdown);
-  registerDream(savedFilename, savedSlug, dateStr);
-  pruneOldDreams(getDreamsDir(), dateStr);
+
+  // Store into encrypted deep memory
+  const deepMemoryId = storeDeepMemory(
+    { text_summary: savedSlug, markdown: dream.markdown, isNightmare: !!isNightmare },
+    isNightmare ? "nightmare" : "dream"
+  );
+
+  // Register dream in remembrance map and prune old files
+  registerDream(savedFilename, savedSlug, dateStr, {
+    isNightmare: !!isNightmare,
+    isMetaSynthesis: !!rememberedDream,
+    deepMemoryId,
+    sourceFilenames: rememberedDream ? [chosenFilename].filter(Boolean) as string[] : undefined
+  });
+  
+  pruneOldDreams(getDreamsDir(), savedFilename);
 
   // Separate LLM call to distill one insight for working memory
   let insight: string | null = null;

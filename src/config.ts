@@ -76,6 +76,8 @@ export const MOLTBOOK_BASE_URL = "https://www.moltbook.com/api/v1";
 // without requiring separate env vars.
 
 let _moltbookEnabled = (process.env.MOLTBOOK_ENABLED ?? "false").toLowerCase() === "true";
+let _moltbookBackfillEnabled =
+  (process.env.MOLTBOOK_BACKFILL_ENABLED ?? (_moltbookEnabled ? "true" : "false")).toLowerCase() !== "false";
 let _webSearchEnabled =
   (process.env.WEB_SEARCH_ENABLED ?? "true").toLowerCase() !== "false";
 let _notificationChannel = process.env.NOTIFICATION_CHANNEL ?? "";
@@ -91,7 +93,15 @@ let _workspaceDiffEnabled =
 
 /** Apply config values passed from the OpenClaw plugin API (`api.pluginConfig`). */
 export function applyPluginConfig(cfg: Record<string, unknown>): void {
-  if (typeof cfg.moltbookEnabled === "boolean") _moltbookEnabled = cfg.moltbookEnabled;
+  if (typeof cfg.moltbookEnabled === "boolean") {
+    _moltbookEnabled = cfg.moltbookEnabled;
+    if (typeof cfg.moltbookBackfillEnabled !== "boolean") {
+      _moltbookBackfillEnabled = _moltbookEnabled;
+    }
+  }
+  if (typeof cfg.moltbookBackfillEnabled === "boolean") {
+    _moltbookBackfillEnabled = cfg.moltbookBackfillEnabled;
+  }
   if (typeof cfg.webSearchEnabled === "boolean") _webSearchEnabled = cfg.webSearchEnabled;
   if (typeof cfg.notificationChannel === "string")
     _notificationChannel = cfg.notificationChannel;
@@ -107,6 +117,7 @@ export function applyPluginConfig(cfg: Record<string, unknown>): void {
 }
 
 export const getMoltbookEnabled = (): boolean => _moltbookEnabled;
+export const getMoltbookBackfillEnabled = (): boolean => _moltbookBackfillEnabled;
 export const getWebSearchEnabled = (): boolean => _webSearchEnabled;
 export const getNotificationChannel = (): string => _notificationChannel;
 export const getNotifyOperatorOnDream = (): boolean => _notifyOperatorOnDream;

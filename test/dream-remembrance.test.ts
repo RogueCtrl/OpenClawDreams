@@ -75,7 +75,7 @@ describe("Dream Remembrance (SQLite)", () => {
   it("selectDreamToRemember returns a valid filename when entries exist", () => {
     const chosen = selectDreamToRemember("2026-03-10");
     assert.ok(chosen);
-    assert.ok(chosen.endsWith(".md"));
+    assert.ok(chosen.filename.endsWith(".md"));
   });
 
   it("weighted selection heavily favors older+low-count dreams", () => {
@@ -97,8 +97,8 @@ describe("Dream Remembrance (SQLite)", () => {
     };
     for (let i = 0; i < 1000; i++) {
       const chosen = selectDreamToRemember("2026-03-08");
-      if (chosen && tally[chosen] !== undefined) {
-        tally[chosen]++;
+      if (chosen && tally[chosen.filename] !== undefined) {
+        tally[chosen.filename]++;
       }
     }
 
@@ -109,7 +109,7 @@ describe("Dream Remembrance (SQLite)", () => {
     );
   });
 
-  it("pruneOldDreams deletes files older than today, keeps today's file", () => {
+  it("pruneOldDreams deletes other files, keeps current file", () => {
     const oldFile = join(dreamsDir, "2026-03-06_Old.md");
     const todayFile = join(dreamsDir, "2026-03-08_Today.md");
 
@@ -119,7 +119,7 @@ describe("Dream Remembrance (SQLite)", () => {
     assert.ok(existsSync(oldFile));
     assert.ok(existsSync(todayFile));
 
-    pruneOldDreams(dreamsDir, "2026-03-08");
+    pruneOldDreams(dreamsDir, "2026-03-08_Today.md");
 
     assert.ok(!existsSync(oldFile), "Old file should be pruned");
     assert.ok(existsSync(todayFile), "Today's file should be kept");
