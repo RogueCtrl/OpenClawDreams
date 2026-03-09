@@ -1,16 +1,9 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import {
-  getDreamsDir,
-  getNightmaresDir,
-  getMoltbookEnabled,
-  getMoltbookBackfillEnabled,
-  AGENT_NAME,
-} from "./config.js";
+import { getDreamsDir, getNightmaresDir } from "./config.js";
 import { storeDeepMemory, registerDream, getDreamRemembrances } from "./memory.js";
 import { loadState, saveState } from "./state.js";
 import logger from "./logger.js";
-import { MoltbookClient } from "./moltbook.js";
 
 function parseFilename(filename: string): { date: string; title: string } | null {
   const match = filename.match(/^(\d{4}-\d{2}-\d{2})_(.+)\.md$/);
@@ -69,61 +62,6 @@ export async function ensureBackfilled(): Promise<void> {
       });
       existing.add(f);
       backfillCount++;
-    }
-  }
-
-  // 3. Backfill from Moltbook
-  if (getMoltbookEnabled() && getMoltbookBackfillEnabled()) {
-    try {
-      const client = new MoltbookClient();
-      logger.info("Fetching agent posts from Moltbook for backfill...");
-      // In MoltbookClient, getFeed might not allow filtering by author directly in the query,
-      // or we can fetch a specific submolt. Let's fetch /posts?submolt=dreams.
-      // Wait, we can fetch all posts and filter. Or search? We can fetch agent's own feed or profile?
-      // Since we don't have a getMyPosts, let's just use status or getFeed.
-      // Let's check moltbook feed:
-      const feed = await client.getFeed("new", 50);
-      const posts = (feed.posts || []) as Array<{
-        id: string;
-        title: string;
-        content: string;
-        author: string;
-        created_at?: string;
-      }>;
-
-      for (const post of posts) {
-        if (post.author !== AGENT_NAME) continue;
-
-        // Try to derive a filename to see if we already have it.
-        // title might be "Morning Reflection: The_Room_That_Remembers_Itself"
-        const cleanTitle = post.title.replace(/^Morning Reflection:\s*/i, "").trim();
-        const dateStr = post.created_at
-          ? post.created_at.slice(0, 10)
-          : new Date().toISOString().slice(0, 10);
-        // The slug usually replaces spaces with underscores
-        const slug = cleanTitle.replace(/ /g, "_");
-        const filename = `${dateStr}_${slug}.md`;
-
-        if (existing.has(filename)) continue;
-
-        const deepMemoryId = storeDeepMemory(
-          {
-            text_summary: cleanTitle,
-            markdown: post.content,
-            isNightmare: false,
-            moltbookId: post.id,
-          },
-          "dream"
-        );
-        registerDream(filename, cleanTitle, dateStr, {
-          isNightmare: false,
-          deepMemoryId,
-        });
-        existing.add(filename);
-        backfillCount++;
-      }
-    } catch (e) {
-      logger.warn(`Failed to backfill from Moltbook: ${e}`);
     }
   }
 
