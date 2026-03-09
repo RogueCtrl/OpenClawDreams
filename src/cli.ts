@@ -509,6 +509,41 @@ export function registerCommands(parent: Command): void {
         process.exit(1);
       }
     });
+  parent
+    .command("report")
+    .description("Generate and send a weekly cognitive rhythm report")
+    .option("--dry-run", "Print JSON to stdout without sending notification")
+    .action(async (opts: { dryRun?: boolean }) => {
+      const { generateRhythmReport, formatReportNotification } =
+        await import("./rhythm.js");
+
+      const report = generateRhythmReport();
+
+      if (opts.dryRun) {
+        console.log(JSON.stringify(report, null, 2));
+        return;
+      }
+
+      const message = formatReportNotification(report);
+      console.log(chalk.cyan.bold("\nCognitive Rhythm Report\n"));
+      console.log(message);
+
+      // Try to send notification via OpenClaw channels
+      try {
+        const { getNotificationChannel } = await import("./config.js");
+        const channel = getNotificationChannel();
+        if (channel) {
+          console.log(
+            chalk.dim(`\nNote: Notification sending requires OpenClaw runtime.`)
+          );
+          console.log(chalk.dim(`Configure via: openclaw plugins install`));
+        }
+      } catch {
+        // standalone mode, no notification
+      }
+
+      console.log(chalk.green.bold("\nReport complete.\n"));
+    });
 } // end registerCommands
 
 // Standalone bin entry point
