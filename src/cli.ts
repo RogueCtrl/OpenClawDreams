@@ -84,7 +84,7 @@ export function registerCommands(parent: Command): void {
         console.log(chalk.bold("Token Budget:"));
         console.log(
           `  ${color(`${budget.used.toLocaleString()} / ${budget.limit.toLocaleString()} tokens (${pct}%)`)}` +
-            `  ${chalk.dim(`remaining: ${budget.remaining.toLocaleString()}`)}`
+          `  ${chalk.dim(`remaining: ${budget.remaining.toLocaleString()}`)}`
         );
         console.log(`  ${chalk.dim(`date: ${budget.date} UTC`)}`);
       } else {
@@ -277,20 +277,20 @@ export function registerCommands(parent: Command): void {
           text,
           usage: data.usage
             ? {
-                input_tokens: (data.usage as Record<string, number>).input_tokens ?? 0,
-                output_tokens: (data.usage as Record<string, number>).output_tokens ?? 0,
-              }
+              input_tokens: (data.usage as Record<string, number>).input_tokens ?? 0,
+              output_tokens: (data.usage as Record<string, number>).output_tokens ?? 0,
+            }
             : undefined,
         };
       },
     });
 
     const minimalApi = {
-      registerTool: () => {},
-      registerCli: () => {},
-      registerHook: () => {},
-      registerService: () => {},
-      registerGatewayMethod: () => {},
+      registerTool: () => { },
+      registerCli: () => { },
+      registerHook: () => { },
+      registerService: () => { },
+      registerGatewayMethod: () => { },
       runtime: { subagent: {} } as OpenClawAPI["runtime"],
       memory: undefined,
       logger: {
@@ -577,32 +577,46 @@ export function registerCommands(parent: Command): void {
       }
     });
 
+  const rhythmAction = async (opts: { weekly?: boolean; daily?: boolean; dryRun?: boolean }) => {
+    const { generateRhythmReport, formatReportNotification } =
+      await import("./rhythm.js");
+
+    const days = opts.daily ? 1 : 7; // --weekly is the default
+    const report = generateRhythmReport(undefined, days);
+
+    if (opts.dryRun) {
+      console.log(JSON.stringify(report, null, 2));
+      return;
+    }
+
+    const message = formatReportNotification(report);
+    const label = days === 1 ? "Daily" : "Weekly";
+    console.log(chalk.cyan.bold(`\n${label} Cognitive Rhythm Report\n`));
+    console.log(message);
+
+    // Notifications are delivered via OpenClaw system events at runtime
+    console.log(
+      chalk.dim(`\nNote: Runtime notifications require OpenClaw plugin context.`)
+    );
+
+    console.log(chalk.green.bold("\nReport complete.\n"));
+  };
+
   parent
-    .command("report")
-    .description("Generate and send a weekly cognitive rhythm report")
-    .option("--dry-run", "Print JSON to stdout without sending notification")
-    .action(async (opts: { dryRun?: boolean }) => {
-      const { generateRhythmReport, formatReportNotification } =
-        await import("./rhythm.js");
+    .command("rhythm")
+    .description("Show cognitive rhythm report — dream, nightmare, and reflection activity")
+    .option("--weekly", "Show last 7 days (default)", true)
+    .option("--daily", "Show last 24 hours only")
+    .option("--dry-run", "Print raw JSON to stdout")
+    .action(rhythmAction);
 
-      const report = generateRhythmReport();
-
-      if (opts.dryRun) {
-        console.log(JSON.stringify(report, null, 2));
-        return;
-      }
-
-      const message = formatReportNotification(report);
-      console.log(chalk.cyan.bold("\nCognitive Rhythm Report\n"));
-      console.log(message);
-
-      // Notifications are delivered via OpenClaw system events at runtime
-      console.log(
-        chalk.dim(`\nNote: Runtime notifications require OpenClaw plugin context.`)
-      );
-
-      console.log(chalk.green.bold("\nReport complete.\n"));
-    });
+  // Hidden alias for backward compatibility
+  parent
+    .command("report", { hidden: true })
+    .option("--weekly", "Show last 7 days (default)", true)
+    .option("--daily", "Show last 24 hours only")
+    .option("--dry-run", "Print raw JSON to stdout")
+    .action(rhythmAction);
 } // end registerCommands
 
 // Standalone bin entry point
