@@ -1,16 +1,19 @@
 /**
  * Operator notification module.
  *
- * Sends notifications to the operator through configured channels
- * (Telegram, Discord, Slack, etc.) when dreams are generated.
+ * Sends notifications to the operator via OpenClaw system events
+ * when dreams are generated.
  */
 
-import { getNotificationChannel, getNotifyOperatorOnDream } from "./config.js";
+import { getNotifyOperatorOnDream } from "./config.js";
 import { callWithRetry, WAKING_RETRY_OPTS } from "./llm.js";
 import { DREAM_NOTIFICATION_PROMPT, renderTemplate } from "./persona.js";
 import { getAgentIdentityBlock } from "./identity.js";
 import logger from "./logger.js";
 import type { LLMClient, OpenClawAPI, Dream } from "./types.js";
+
+/** Session key used for system events originating from OpenClawDreams. */
+const SYSTEM_EVENT_SESSION_KEY = "openclawdreams";
 
 /**
  * Generate a conversational message to notify the operator about a dream.
@@ -57,9 +60,9 @@ async function generateDreamNotification(
 }
 
 /**
- * Notify the operator about a dream through the configured channel.
+ * Notify the operator about a dream via OpenClaw system events.
  *
- * Returns true if notification was sent successfully (including fallbacks), false otherwise.
+ * Returns true if notification was enqueued successfully, false otherwise.
  */
 export async function notifyOperatorOfDream(
   client: LLMClient,
@@ -76,60 +79,17 @@ export async function notifyOperatorOfDream(
   // Generate the notification message
   const message = await generateDreamNotification(client, dream);
 
-  // Primary: Try configured channel
-  if (api.channels && getNotificationChannel()) {
-    try {
-      const configuredChannels = await api.channels.getConfigured();
-
-      if (configuredChannels.includes(getNotificationChannel())) {
-        await api.channels.send(getNotificationChannel(), message);
-        logger.info(`Sent dream notification via ${getNotificationChannel()}`);
-        return true;
-      }
-
-      logger.warn(
-        `Notification channel "${getNotificationChannel()}" not available. ` +
-          `Available channels: ${configuredChannels.join(", ")}`
-      );
-    } catch (error) {
-      logger.error(`Failed to send dream notification via channel: ${error}`);
-    }
-  } else if (!api.channels) {
-    logger.warn("OpenClaw channels API not available");
-  } else {
-    logger.debug("No notification channel configured");
-  }
-
-  // Fallback 1: runtime.wakeEvent
-  if (api.runtime?.wakeEvent) {
-    try {
-      await api.runtime.wakeEvent({ text: message, mode: "now" });
-      logger.info("Sent dream notification via runtime.wakeEvent fallback");
-      return true;
-    } catch (error) {
-      logger.error(`Failed to send dream notification via wakeEvent: ${error}`);
-    }
-  }
-
-  // Fallback 2: Last resort log
-  logger.warn(
-    `DREAM NOTIFICATION FALLBACK:\nTitle: ${title}\nInsight: ${insight || "No insight"}\nMessage: ${message}`
-  );
-  return true;
-}
-
-/**
- * Get a list of available notification channels.
- */
-export async function getAvailableChannels(api: OpenClawAPI): Promise<string[]> {
-  if (!api.channels) {
-    return [];
-  }
-
   try {
-    return await api.channels.getConfigured();
+    api.runtime.system.enqueueSystemEvent(message, {
+      sessionKey: SYSTEM_EVENT_SESSION_KEY,
+    });
+    logger.info(`Enqueued dream notification as system event: ${title}`);
+    return true;
   } catch (error) {
-    logger.error(`Failed to get available channels: ${error}`);
-    return [];
+    logger.warn(
+      `Failed to enqueue system event, logging as fallback: ${error}\n` +
+        `Title: ${title}\nInsight: ${insight || "No insight"}\nMessage: ${message}`
+    );
+    return false;
   }
 }

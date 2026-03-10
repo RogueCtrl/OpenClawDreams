@@ -147,11 +147,6 @@ export interface OpenClawMemoryAPI {
   search(query: string, limit?: number): Promise<MemorySearchResult[]>;
 }
 
-export interface OpenClawChannelsAPI {
-  send(channel: string, message: string): Promise<void>;
-  getConfigured(): Promise<string[]>;
-}
-
 export interface OpenClawWebSearchAPI {
   search(query: string, limit?: number): Promise<WebSearchResult[]>;
 }
@@ -203,10 +198,14 @@ export interface OpenClawAPI {
         limit?: number;
       }): Promise<{ messages: Array<Record<string, unknown>> }>;
     };
-    wakeEvent?: (params: { text: string; mode: "now" | "later" }) => Promise<void>;
+    system: {
+      enqueueSystemEvent(
+        text: string,
+        options?: { sessionKey?: string; contextKey?: string }
+      ): void;
+    };
   };
   memory?: OpenClawMemoryAPI;
-  channels?: OpenClawChannelsAPI;
   webSearch?: OpenClawWebSearchAPI;
 }
 
@@ -242,7 +241,6 @@ export interface ElectricSheepConfig {
   postFilterEnabled: boolean;
   moltbookEnabled: boolean;
   webSearchEnabled: boolean;
-  notificationChannel: string;
   notifyOperatorOnDream: boolean;
   requireApprovalBeforePost: boolean;
   dreamSubmolt: string;

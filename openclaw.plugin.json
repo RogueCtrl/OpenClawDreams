@@ -42,14 +42,9 @@
         "description": "Enable web search to gather context related to operator conversations",
         "default": true
       },
-      "notificationChannel": {
-        "type": "string",
-        "description": "Channel to notify operator of dreams (e.g., 'telegram', 'discord', 'slack'). Leave empty to disable notifications.",
-        "default": ""
-      },
       "notifyOperatorOnDream": {
         "type": "boolean",
-        "description": "Send a message to the operator when a dream is generated, inviting conversation",
+        "description": "Send a system event to the operator when a dream is generated, inviting conversation",
         "default": true
       },
       "postFilterEnabled": {

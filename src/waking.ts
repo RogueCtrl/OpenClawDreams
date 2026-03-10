@@ -200,7 +200,7 @@ export async function checkAndEngage(client: LLMClient): Promise<void> {
   );
 
   // Create a minimal API object for the reflection cycle
-  // This won't have memory/channels but will still work
+  // This won't have memory but will still work
   const minimalApi: OpenClawAPI = {
     registerTool: () => {},
     registerCli: () => {},
@@ -213,7 +213,10 @@ export async function checkAndEngage(client: LLMClient): Promise<void> {
         waitForRun: async () => ({ status: "ok" }),
         getSessionMessages: async () => ({ messages: [] }),
       },
-    } as OpenClawAPI["runtime"],
+      system: {
+        enqueueSystemEvent: () => {},
+      },
+    },
   };
 
   await runReflectionCycle(client, minimalApi);

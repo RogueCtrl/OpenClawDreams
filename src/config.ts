@@ -78,7 +78,6 @@ export const MOLTBOOK_BASE_URL = "https://www.moltbook.com/api/v1";
 let _moltbookEnabled = (process.env.MOLTBOOK_ENABLED ?? "false").toLowerCase() === "true";
 let _webSearchEnabled =
   (process.env.WEB_SEARCH_ENABLED ?? "true").toLowerCase() !== "false";
-let _notificationChannel = process.env.NOTIFICATION_CHANNEL ?? "";
 let _notifyOperatorOnDream =
   (process.env.NOTIFY_OPERATOR_ON_DREAM ?? "true").toLowerCase() !== "false";
 let _postFilterEnabled =
@@ -97,8 +96,6 @@ export function applyPluginConfig(cfg: Record<string, unknown>): void {
     _moltbookEnabled = cfg.moltbookEnabled;
   }
   if (typeof cfg.webSearchEnabled === "boolean") _webSearchEnabled = cfg.webSearchEnabled;
-  if (typeof cfg.notificationChannel === "string")
-    _notificationChannel = cfg.notificationChannel;
   if (typeof cfg.notifyOperatorOnDream === "boolean")
     _notifyOperatorOnDream = cfg.notifyOperatorOnDream;
   if (typeof cfg.postFilterEnabled === "boolean")
@@ -116,7 +113,6 @@ export function applyPluginConfig(cfg: Record<string, unknown>): void {
 
 export const getMoltbookEnabled = (): boolean => _moltbookEnabled;
 export const getWebSearchEnabled = (): boolean => _webSearchEnabled;
-export const getNotificationChannel = (): string => _notificationChannel;
 export const getNotifyOperatorOnDream = (): boolean => _notifyOperatorOnDream;
 export const getPostFilterEnabled = (): boolean => _postFilterEnabled;
 export const getRequireApprovalBeforePost = (): boolean => _requireApprovalBeforePost;
@@ -135,8 +131,6 @@ export const MOLTBOOK_ENABLED = false; // overridden by getter; prefer getMoltbo
 export const WEB_SEARCH_ENABLED = true; // overridden by getter; prefer getWebSearchEnabled()
 
 // Operator Notifications
-/** @deprecated Use getNotificationChannel() */
-export const NOTIFICATION_CHANNEL = ""; // overridden by getter; prefer getNotificationChannel()
 /** @deprecated Use getNotifyOperatorOnDream() */
 export const NOTIFY_OPERATOR_ON_DREAM = true; // overridden by getter; prefer getNotifyOperatorOnDream()
 
