@@ -528,19 +528,10 @@ export function registerCommands(parent: Command): void {
       console.log(chalk.cyan.bold("\nCognitive Rhythm Report\n"));
       console.log(message);
 
-      // Try to send notification via OpenClaw channels
-      try {
-        const { getNotificationChannel } = await import("./config.js");
-        const channel = getNotificationChannel();
-        if (channel) {
-          console.log(
-            chalk.dim(`\nNote: Notification sending requires OpenClaw runtime.`)
-          );
-          console.log(chalk.dim(`Configure via: openclaw plugins install`));
-        }
-      } catch {
-        // standalone mode, no notification
-      }
+      // Notifications are delivered via OpenClaw system events at runtime
+      console.log(
+        chalk.dim(`\nNote: Runtime notifications require OpenClaw plugin context.`)
+      );
 
       console.log(chalk.green.bold("\nReport complete.\n"));
     });

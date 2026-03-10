@@ -38,7 +38,10 @@ function mockOpenClawAPI(): OpenClawAPI {
         waitForRun: async () => ({ status: "ok" }),
         getSessionMessages: async () => ({ messages: [] }),
       },
-    } as OpenClawAPI["runtime"],
+      system: {
+        enqueueSystemEvent: () => {},
+      },
+    },
   };
 }
 
@@ -61,7 +64,10 @@ function mockOpenClawAPIWithMemory(): OpenClawAPI & {
         waitForRun: async () => ({ status: "ok" }),
         getSessionMessages: async () => ({ messages: [] }),
       },
-    } as OpenClawAPI["runtime"],
+      system: {
+        enqueueSystemEvent: () => {},
+      },
+    },
     memory: {
       async store(content: string, metadata?: Record<string, unknown>) {
         storedMemories.push({ content, metadata });
