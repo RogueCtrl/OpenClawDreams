@@ -18,6 +18,7 @@ import {
   getWebSearchEnabled,
 } from "./config.js";
 import logger from "./logger.js";
+import { fetchCommunityPosts, formatCommunityContext } from "./ingestion.js";
 import type { LLMClient, OpenClawAPI, SynthesisContext } from "./types.js";
 
 /**
@@ -74,10 +75,23 @@ export async function gatherContext(
     }
   }
 
+  // Step 4: Fetch community posts (if enabled)
+  let communityContext: string | undefined;
+  try {
+    const communityPosts = await fetchCommunityPosts();
+    communityContext = formatCommunityContext(communityPosts) || undefined;
+    if (communityContext) {
+      logger.debug("Gathered community ingestion context");
+    }
+  } catch (error) {
+    logger.warn(`Community ingestion failed: ${error}`);
+  }
+
   return {
     operatorContext: formatDeepMemoryContext(),
     moltbookContext: moltbookContext || undefined,
     webContext: webContext || undefined,
+    communityContext,
     topics: extracted.topics,
   };
 }
@@ -102,6 +116,10 @@ export function formatSynthesisContext(ctx: SynthesisContext): string {
 
   if (ctx.webContext) {
     sections.push(ctx.webContext);
+  }
+
+  if (ctx.communityContext) {
+    sections.push(ctx.communityContext);
   }
 
   return sections.join("\n\n---\n\n");

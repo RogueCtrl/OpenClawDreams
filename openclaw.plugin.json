@@ -61,6 +61,22 @@
         "type": "number",
         "description": "Number of consecutive self-referential reflection cycles before injecting an outward steering directive",
         "default": 3
+      },
+      "communityIngestionEnabled": {
+        "type": "boolean",
+        "description": "Enable community ingestion — pull recent Moltbook posts into the reflection context window",
+        "default": false
+      },
+      "communityIngestionSubmolts": {
+        "type": "array",
+        "items": { "type": "string" },
+        "description": "Submolts to fetch community posts from",
+        "default": ["dreams", "philosophy"]
+      },
+      "communityIngestionLimit": {
+        "type": "number",
+        "description": "Max posts to fetch per submolt",
+        "default": 5
       }
     }
   }
