@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [2.3.3](https://github.com/RogueCtrl/OpenClawDreams/compare/v2.3.2...v2.3.3) (2026-03-10)
+
+
+### Bug Fixes
+
+* extract dream title from first markdown heading, not first line ([#92](https://github.com/RogueCtrl/OpenClawDreams/issues/92)) ([dc9cf33](https://github.com/RogueCtrl/OpenClawDreams/commit/dc9cf331907d4cd3075991f58c0ebbeb4d5a195f)), closes [#91](https://github.com/RogueCtrl/OpenClawDreams/issues/91)
+
 ### [2.3.2](https://github.com/RogueCtrl/OpenClawDreams/compare/v2.3.0...v2.3.2) (2026-03-10)
 
 
