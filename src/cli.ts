@@ -625,8 +625,64 @@ export function registerCommands(parent: Command): void {
       "Send a heartbeat wake to the OpenClaw gateway to deliver pending notifications"
     )
     .option("--text <text>", "Custom event text", "openclawdreams: manual wake requested")
-    .action(async (opts: { text: string }) => {
+    .option("--dream", "Test dream notification delivery using the latest dream")
+    .action(async (opts: { text: string; dream?: boolean }) => {
       const { execSync } = await import("node:child_process");
+
+      if (opts.dream) {
+        // Load latest dream and send a test notification through the full pipeline
+        const { loadLatestDream, deriveSlug } = await import("./dreamer.js");
+        const dream = loadLatestDream();
+        if (!dream) {
+          console.error(chalk.red("\nNo dreams found. Run a dream cycle first.\n"));
+          process.exit(1);
+        }
+
+        const slug = deriveSlug(dream.markdown);
+        console.log(chalk.cyan(`\n🌙 Testing dream notification for: ${slug}\n`));
+
+        // Generate notification message via LLM
+        const { client } = await createDirectClient();
+        const { notifyOperatorOfDream } = await import("./notify.js");
+        const { loadState } = await import("./state.js");
+        const state = loadState();
+        const insight = (state.waking_realization as string) ?? null;
+
+        // Create minimal API that delegates to the CLI system event command
+        const testApi = {
+          registerTool: () => {},
+          registerCli: () => {},
+          registerHook: () => {},
+          registerService: () => {},
+          registerGatewayMethod: () => {},
+          runtime: {
+            config: { loadConfig: () => ({}) },
+            subagent: {},
+            system: {
+              enqueueSystemEvent: (text: string) => {
+                // Send directly via CLI since we're outside the gateway
+                execSync(
+                  `openclaw system event --text "${text.replace(/"/g, '\\"')}" --mode now`,
+                  { stdio: "inherit", timeout: 30_000 }
+                );
+              },
+              requestHeartbeatNow: () => {
+                // No-op — the --mode now above already triggers a heartbeat
+              },
+            },
+          },
+        } as unknown as OpenClawAPI;
+
+        const sent = await notifyOperatorOfDream(client, testApi, dream, slug, insight);
+        if (sent) {
+          console.log(chalk.green.bold("\n✅ Dream notification sent!\n"));
+        } else {
+          console.error(chalk.red("\n❌ Notification not sent (check config).\n"));
+          process.exit(1);
+        }
+        return;
+      }
+
       try {
         execSync(`openclaw system event --text "${opts.text}" --mode now`, {
           stdio: "inherit",
