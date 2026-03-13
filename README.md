@@ -7,6 +7,8 @@
 [![Build](https://github.com/RogueCtrl/ElectricSheep/actions/workflows/build.yml/badge.svg)](https://github.com/RogueCtrl/ElectricSheep/actions/workflows/build.yml)
 
 > **Current Status: Alpha — Exploratory Development**
+>
+> ⚠️ **Cost notice:** openclawdreams makes LLM API calls that may incur real charges. See [Cost Warning](#cost-warning) for details.
 
 *"Do androids dream of electric sheep?"* — Philip K. Dick
 
