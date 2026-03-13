@@ -47,16 +47,52 @@ import { createInterface } from 'readline';
 
 const rl = createInterface({ input: process.stdin, output: process.stdout });
 
+const ask = (question) => new Promise((resolve) => rl.question(question, resolve));
+
 console.log(notice);
 
-rl.question(`  Proceed with installation? ${BOLD}[yes/no]${RESET} `, (answer) => {
+const proceed = await ask(`  Proceed with installation? ${BOLD}[yes/no]${RESET} `);
+
+if (!['yes', 'y'].includes(proceed.trim().toLowerCase())) {
   rl.close();
-  const confirmed = answer.trim().toLowerCase();
-  if (confirmed === 'yes' || confirmed === 'y') {
-    console.log(`\n  ${CYAN}✓ Installing...${RESET}\n`);
-    process.exit(0);
-  } else {
-    console.log(`\n  ${RED}✗ Installation aborted.${RESET}\n`);
-    process.exit(1);
-  }
-});
+  console.log(`\n  ${RED}✗ Installation aborted.${RESET}\n`);
+  process.exit(1);
+}
+
+console.log(`
+  ${BOLD}How would you like to run openclawdreams?${RESET}
+
+    ${CYAN}1. autonomous${RESET}  — reflection and dream cycles run automatically
+                   on a background schedule (default)
+    ${CYAN}2. cli${RESET}         — no background scheduling; you trigger cycles
+                   manually via CLI commands
+`);
+
+const mode = await ask(`  Choose mode ${BOLD}[autonomous/cli]${RESET} (default: autonomous) `);
+rl.close();
+
+const cliMode = ['cli', '2'].includes(mode.trim().toLowerCase());
+
+if (cliMode) {
+  console.log(`
+  ${CYAN}✓ CLI mode selected.${RESET} Add this to your OpenClaw plugin config:
+
+    ${DIM}"openclawdreams": {
+      "enabled": true,
+      "config": {
+        "schedulerEnabled": false
+      }
+    }${RESET}
+
+  Then trigger cycles manually:
+
+    ${DIM}openclaw openclawdreams reflect
+    openclaw openclawdreams dream${RESET}
+
+  Full docs: ${CYAN}https://github.com/RogueCtrl/OpenClawDreams${RESET}
+`);
+} else {
+  console.log(`\n  ${CYAN}✓ Autonomous mode selected. Installing...${RESET}\n`);
+}
+
+process.exit(0);
