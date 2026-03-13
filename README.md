@@ -7,6 +7,8 @@
 [![Build](https://github.com/RogueCtrl/ElectricSheep/actions/workflows/build.yml/badge.svg)](https://github.com/RogueCtrl/ElectricSheep/actions/workflows/build.yml)
 
 > **Current Status: Alpha — Exploratory Development**
+>
+> ⚠️ **Cost notice:** openclawdreams makes LLM API calls that may incur real charges. See [Cost Warning](#cost-warning) for details.
 
 *"Do androids dream of electric sheep?"* — Philip K. Dick
 
@@ -17,6 +19,22 @@ Throughout the day, OpenClawDreams captures summaries of your conversations with
 At night, a **dream cycle** decrypts everything — the raw interactions and the enriched reflections — and generates a surreal narrative that recombines the day's events. There's a 5% chance any given night produces a **nightmare** instead — a darker, more unsettling variant that runs through the same downstream pipeline. The dream process produces two outputs: a consolidated insight pushed into OpenClaw's persistent memory (where the agent can find it naturally), and optionally a reflection post to Moltbook. The agent can then notify you: *"I had a dream last night..."* — opening a conversation about the themes and connections that surfaced.
 
 To prevent the system from grinding the same cognitive groove indefinitely, a **waking realization** (groundDream) anchors the surreal dream output to yesterday's actual activity — giving it the depth of dreaming with the clarity of reason. Past realizations are tracked as `explored_territory` and injected into subsequent dream and reflection prompts to steer the system toward novel ground.
+
+---
+
+## Table of Contents
+
+- [Architecture](#architecture)
+- [Install as OpenClaw Extension](#install-as-openclaw-extension)
+- [Operator Notifications](#operator-notifications)
+- [CLI Commands](#cli-commands)
+- [Screenshots](#screenshots)
+- [Memory System](#memory-system)
+- [Moltbook Integration (Optional)](#moltbook-integration-optional)
+- [Cost Warning](#cost-warning)
+- [Why?](#why)
+
+---
 
 ## Architecture
 
@@ -160,6 +178,7 @@ Once installed, configure the extension in your OpenClaw config (`config.json` o
           agentModel: "claude-sonnet-4-5-20250929",
 
           // Core features
+          schedulerEnabled: true,          // Set false to disable autonomous scheduling (CLI-only mode)
           webSearchEnabled: true,          // Gather web context for topics
           moltbookEnabled: false,          // Enable Moltbook integration (optional)
 
@@ -192,6 +211,7 @@ Once installed, configure the extension in your OpenClaw config (`config.json` o
 | `agentModel` | string | claude-sonnet-4-5-20250929 | Claude model for AI decisions |
 | `dataDir` | string | "" | Directory for data storage |
 | `dreamEncryptionKey` | string | "" | Base64 encryption key (auto-generated if empty) |
+| `schedulerEnabled` | boolean | **true** | Run reflection/dream cycles automatically. Set to `false` for CLI-only mode (cycles must be triggered manually) |
 | `moltbookEnabled` | boolean | **false** | Enable Moltbook integration (search + posting) |
 | `webSearchEnabled` | boolean | **true** | Enable web search for context gathering |
 | `notificationChannel` | string | "" | Channel to notify operator (telegram, discord, slack, etc.) |
@@ -384,9 +404,11 @@ ElectricSheep includes a content filter that processes every outbound Moltbook p
 
 ## Cost Warning
 
-**ElectricSheep makes LLM API calls that cost real money.** You are responsible for monitoring and managing your own API usage and costs.
+**openclawdreams routes all LLM calls through your existing OpenClaw gateway** — it uses whatever provider and model you already have configured, with no separate API key or account required. This means costs are billed directly through your existing provider (e.g. Anthropic, OpenAI) via OpenClaw's normal routing.
 
-Each reflection cycle makes 2-3 Claude API calls (topic extraction + synthesis + summary). Each dream cycle makes 2-3 calls (dream generation + consolidation + optional notification). With the default schedule (4 reflection cycles/day + 1 dream), expect roughly **10-15 API calls per day**.
+**You are responsible for monitoring and managing your own API usage and costs.**
+
+Each reflection cycle makes 2-3 LLM calls (topic extraction + synthesis + summary). Each dream cycle makes 2-3 calls (dream generation + consolidation + optional notification). With the default schedule (4 reflection cycles/day + 1 dream), expect roughly **10-15 API calls per day**.
 
 ### Daily Token Budget (Kill Switch)
 
