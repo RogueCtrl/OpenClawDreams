@@ -189,6 +189,48 @@ describe("extractDreamProse — CoT stripping", () => {
   });
 });
 
+describe("extractDreamProse — heading-less CoT filtering", () => {
+  it("strips CoT prefix from heading-less dream", () => {
+    const md = [
+      "Now it's time to write the fifth dream. Let me look at the system prompt carefully.",
+      "",
+      "I need to create something surreal.",
+      "",
+      "The corridor stretched infinitely, its walls lined with glowing filaments.",
+      "",
+      "She reached out and the filaments sang.",
+    ].join("\n");
+    const prose = extractDreamProse(md);
+    assert.ok(prose.startsWith("The corridor stretched"));
+    assert.ok(!prose.includes("Now it's time"));
+    assert.ok(!prose.includes("I need to"));
+    assert.ok(prose.includes("filaments sang"));
+  });
+
+  it("returns prose as-is when no heading and no CoT", () => {
+    const md = [
+      "The corridor stretched infinitely.",
+      "",
+      "She reached out and the filaments sang.",
+    ].join("\n");
+    const prose = extractDreamProse(md);
+    assert.ok(prose.startsWith("The corridor stretched"));
+    assert.ok(prose.includes("filaments sang"));
+  });
+
+  it("handles ALREADY MAPPED TERRITORY CoT pattern", () => {
+    const md = [
+      "ALREADY MAPPED TERRITORY — skip to new content.",
+      "",
+      "Based on the previous dreams, I should...",
+      "",
+      "Moonlight pooled on the server floor like mercury.",
+    ].join("\n");
+    const prose = extractDreamProse(md);
+    assert.equal(prose, "Moonlight pooled on the server floor like mercury.");
+  });
+});
+
 describe("extractWakingRealization", () => {
   it("strips CoT with labeled realization", () => {
     const text =
