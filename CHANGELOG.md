@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [3.0.2](https://github.com/RogueCtrl/OpenClawDreams/compare/v3.0.0...v3.0.2) (2026-03-15)
+
+
+### Bug Fixes
+
+* assistant prefill '# ' forces title-first dream output (ROG-44) ([168944a](https://github.com/RogueCtrl/OpenClawDreams/commit/168944a7cb96fecae24d0e91b905fbb524bb9347)), closes [#129](https://github.com/RogueCtrl/OpenClawDreams/issues/129)
+* extractDreamProse fallback CoT filtering for heading-less dreams (ROG-44) ([73d8a73](https://github.com/RogueCtrl/OpenClawDreams/commit/73d8a73ffc543cbc7621024d5640f16c7cf2f7c2))
+
 ### [3.0.1](https://github.com/RogueCtrl/OpenClawDreams/compare/v3.0.0...v3.0.1) (2026-03-14)
 
 ## [3.0.0](https://github.com/RogueCtrl/OpenClawDreams/compare/v2.7.8...v3.0.0) (2026-03-13)
