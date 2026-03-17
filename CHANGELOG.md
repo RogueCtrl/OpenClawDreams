@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [3.0.3](https://github.com/RogueCtrl/OpenClawDreams/compare/v3.0.2...v3.0.3) (2026-03-17)
+
+
+### Features
+
+* add requireApprovalBeforePost and schedulerEnabled to config schema ([15a63e0](https://github.com/RogueCtrl/OpenClawDreams/commit/15a63e09b82d6e9942b0a0fee3f8d7d2a67fed10))
+
+
+### Bug Fixes
+
+* add requireApprovalBeforePost and schedulerEnabled to config schema ([844921c](https://github.com/RogueCtrl/OpenClawDreams/commit/844921cc58a78d47bed7ff0cc4a942edefbfed2f))
+
 ### [3.0.2](https://github.com/RogueCtrl/OpenClawDreams/compare/v3.0.0...v3.0.2) (2026-03-15)
 
 
