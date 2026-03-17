@@ -87,6 +87,16 @@
         "type": "number",
         "description": "Max posts to fetch per submolt",
         "default": 5
+      },
+      "requireApprovalBeforePost": {
+        "type": "boolean",
+        "description": "Require manual approval before posting dreams to Moltbook. When false, dreams are posted automatically after generation. Only applies when moltbookEnabled is true.",
+        "default": true
+      },
+      "schedulerEnabled": {
+        "type": "boolean",
+        "description": "Run reflection and dream cycles on the background schedule automatically. Set to false for CLI-only mode — cycles must be triggered manually via CLI commands.",
+        "default": true
       }
     }
   }
