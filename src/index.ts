@@ -63,8 +63,6 @@ function saveSchedulerState(state: SchedulerState): void {
   }
 }
 
-
-
 function wrapSubagent(api: OpenClawAPI): LLMClient {
   const raw: LLMClient = {
     async createMessage(params) {

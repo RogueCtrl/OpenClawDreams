@@ -156,7 +156,8 @@ export async function synthesizeMetaDream(
       messages: [
         {
           role: "user",
-          content: "Weave these two dreams together into a single meta-dream narrative. Start your response with a markdown heading (# Title).",
+          content:
+            "Weave these two dreams together into a single meta-dream narrative. Start your response with a markdown heading (# Title).",
         },
       ],
     },
