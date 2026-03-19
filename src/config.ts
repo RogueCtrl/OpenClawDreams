@@ -8,10 +8,12 @@ import { homedir } from "node:os";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-config({ quiet: true });
-
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
+
+// Load .env from the package root (two levels up from dist/ or src/)
+// dotenv defaults to process.cwd() which is wrong when loaded as an OpenClaw plugin
+config({ path: resolve(__dirname, "..", "..", ".env"), quiet: true });
 
 // Paths
 export const getBaseDir = () =>
@@ -102,6 +104,7 @@ let _communityIngestionSubmolts = (
 let _communityIngestionLimit = parseInt(process.env.COMMUNITY_INGESTION_LIMIT ?? "5", 10);
 let _schedulerEnabled =
   (process.env.SCHEDULER_ENABLED ?? "true").toLowerCase() !== "false";
+let _maxDailyTokens = parseInt(process.env.MAX_DAILY_TOKENS ?? "800000", 10);
 
 /** Apply config values passed from the OpenClaw plugin API (`api.pluginConfig`). */
 export function applyPluginConfig(cfg: Record<string, unknown>): void {
@@ -131,6 +134,7 @@ export function applyPluginConfig(cfg: Record<string, unknown>): void {
   if (typeof cfg.communityIngestionLimit === "number")
     _communityIngestionLimit = cfg.communityIngestionLimit;
   if (typeof cfg.schedulerEnabled === "boolean") _schedulerEnabled = cfg.schedulerEnabled;
+  if (typeof cfg.maxDailyTokens === "number") _maxDailyTokens = cfg.maxDailyTokens;
 }
 
 export const getMoltbookEnabled = (): boolean => _moltbookEnabled;
@@ -147,6 +151,7 @@ export const getCommunityIngestionEnabled = (): boolean => _communityIngestionEn
 export const getCommunityIngestionSubmolts = (): string[] => _communityIngestionSubmolts;
 export const getCommunityIngestionLimit = (): number => _communityIngestionLimit;
 export const getSchedulerEnabled = (): boolean => _schedulerEnabled;
+export const getMaxDailyTokens = (): number => _maxDailyTokens;
 
 // Legacy constant aliases — kept for backward compatibility but now delegate to
 // getters so they remain in sync after `applyPluginConfig()` is called.
@@ -165,7 +170,10 @@ export const NOTIFY_OPERATOR_ON_DREAM = true; // overridden by getter; prefer ge
 
 // Input tokens are $5/1M but we count all tokens against the output rate for simplicity.
 // Set to 0 to disable the daily budget limit.
-export const MAX_DAILY_TOKENS = parseInt(process.env.MAX_DAILY_TOKENS ?? "800000", 10);
+// Configurable at runtime via applyPluginConfig({ maxDailyTokens: 0 }) or
+// openclaw.json: plugins.entries.openclawdreams.config.maxDailyTokens
+/** @deprecated Use getMaxDailyTokens() */
+export const MAX_DAILY_TOKENS = _maxDailyTokens;
 
 // Workspace (for SOUL.md / IDENTITY.md discovery)
 export const WORKSPACE_DIR = process.env.OPENCLAW_WORKSPACE_DIR ?? "";

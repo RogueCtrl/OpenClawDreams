@@ -97,6 +97,11 @@
         "type": "boolean",
         "description": "Run reflection and dream cycles on the background schedule automatically. Set to false for CLI-only mode — cycles must be triggered manually via CLI commands.",
         "default": true
+      },
+      "maxDailyTokens": {
+        "type": "number",
+        "description": "Daily token budget limit. Set to 0 to disable the budget entirely (recommended for OAuth/flat-rate plans). Default 800000.",
+        "default": 800000
       }
     }
   }

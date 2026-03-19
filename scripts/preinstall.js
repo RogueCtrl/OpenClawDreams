@@ -93,11 +93,24 @@ if (moltbookEnabled) {
   requireApproval = yesNo(approvalAnswer, true);
 }
 
+// ── Step 5: Daily token budget ───────────────────────────────────────────────
+console.log(`
+  ${BOLD}Daily token budget${RESET}
+
+    openclawdreams tracks daily token usage and halts further LLM calls
+    when the budget is exhausted. ${CYAN}800000${RESET} is the default.
+    Set ${CYAN}0${RESET} to disable the budget entirely ${DIM}(recommended for flat-rate / OAuth plans)${RESET}.
+`);
+const budgetAnswer = await ask(`  Daily token budget ${BOLD}[number]${RESET} (default: 800000, 0 to disable) `);
+const parsedBudget = Number.parseInt(budgetAnswer.trim() || '800000', 10);
+const maxDailyTokens = Number.isFinite(parsedBudget) && parsedBudget >= 0 ? parsedBudget : 800000;
+
 // ── Build config object ──────────────────────────────────────────────────────
 const pluginConfig = {
   ...(cliMode ? { schedulerEnabled: false } : {}),
   ...(moltbookEnabled ? { moltbookEnabled: true } : {}),
   ...(moltbookEnabled && !requireApproval ? { requireApprovalBeforePost: false } : {}),
+  maxDailyTokens,
 };
 
 // ── Build snippet strings (used for both auto-write and manual fallback) ─────
@@ -106,7 +119,7 @@ const configLines = Object.entries(pluginConfig)
   .map(([k, v]) => `        "${k}": ${JSON.stringify(v)}`)
   .join(',\n');
 
-// ── Step 5: Auto-write to OpenClaw config ────────────────────────────────────
+// ── Step 6: Auto-write to OpenClaw config ────────────────────────────────────
 const configPath = join(homedir(), '.openclaw', 'openclaw.json');
 const configExists = existsSync(configPath);
 let wrote = false;

@@ -63,92 +63,7 @@ function saveSchedulerState(state: SchedulerState): void {
   }
 }
 
-/**
- * Resolve an Anthropic API key from OpenClaw auth profiles or environment.
- * Returns undefined if no key can be found.
- */
-async function resolveAnthropicApiKey(): Promise<string | undefined> {
-  const { readFileSync } = await import("node:fs");
-  const { join } = await import("node:path");
-  const { homedir } = await import("node:os");
-
-  const candidates = [
-    join(homedir(), ".openclaw", "agents", "main", "agent", "auth-profiles.json"),
-    join(homedir(), ".openclaw", "agents", "default", "auth-profiles.json"),
-    join(homedir(), ".openclaw", "auth-profiles.json"),
-  ];
-
-  for (const p of candidates) {
-    try {
-      const raw = JSON.parse(readFileSync(p, "utf-8"));
-      const profiles = (raw.profiles || {}) as Record<string, Record<string, unknown>>;
-      for (const profile of Object.values(profiles)) {
-        if (profile.provider === "anthropic") {
-          const key =
-            String(profile.key || profile.token || profile.apiKey || "") || undefined;
-          if (key) return key;
-        }
-      }
-    } catch {
-      /* try next candidate */
-    }
-  }
-
-  return process.env.ANTHROPIC_API_KEY || undefined;
-}
-
-/**
- * Direct Anthropic API call — used as fallback when the subagent runtime is
- * unavailable (e.g. background scheduler context).
- */
-async function directAnthropicCall(
-  apiKey: string,
-  params: {
-    model: string;
-    maxTokens: number;
-    system: string;
-    messages: Array<{ role: string; content: string }>;
-  }
-): Promise<{ text: string; usage?: { input_tokens: number; output_tokens: number } }> {
-  const resp = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-api-key": apiKey,
-      "anthropic-version": "2023-06-01",
-    },
-    body: JSON.stringify({
-      model: params.model,
-      max_tokens: params.maxTokens,
-      system: params.system,
-      messages: params.messages,
-    }),
-  });
-
-  if (!resp.ok) {
-    const body = await resp.text();
-    throw new Error(`Anthropic API error ${resp.status}: ${body}`);
-  }
-
-  const data = (await resp.json()) as Record<string, unknown>;
-  const contentArr = data.content as Array<{ text?: string }> | undefined;
-  const text = contentArr?.[0]?.text ?? contentArr?.map((c) => c.text).join("") ?? "";
-
-  return {
-    text,
-    usage: data.usage
-      ? {
-          input_tokens: (data.usage as Record<string, number>).input_tokens ?? 0,
-          output_tokens: (data.usage as Record<string, number>).output_tokens ?? 0,
-        }
-      : undefined,
-  };
-}
-
 function wrapSubagent(api: OpenClawAPI): LLMClient {
-  // Lazily resolved API key for the direct fallback path
-  let cachedApiKey: string | null = null; // null = not yet resolved, "" = not found
-
   const raw: LLMClient = {
     async createMessage(params) {
       // ── Primary path: subagent runtime (available in request / hook context) ──
@@ -211,29 +126,14 @@ function wrapSubagent(api: OpenClawAPI): LLMClient {
         };
       }
 
-      // ── Fallback path: direct Anthropic API (background scheduler context) ──
-      logger.debug(
-        "api.runtime.subagent unavailable — using direct Anthropic API fallback"
+      // ── No fallback: subagent runtime is required ──
+      // ElectricSheep should always route through the OpenClaw gateway so it
+      // uses whatever model the operator has configured. Never hardcode a provider.
+      throw new Error(
+        "api.runtime.subagent is not available. " +
+          "ElectricSheep requires the OpenClaw subagent runtime to make LLM calls. " +
+          "Ensure the plugin is loaded in a gateway context with subagent support."
       );
-
-      if (cachedApiKey === null) {
-        cachedApiKey = (await resolveAnthropicApiKey()) ?? "";
-      }
-
-      if (!cachedApiKey) {
-        throw new Error(
-          "api.runtime.subagent is not available and no Anthropic API key could be resolved. " +
-            "Set ANTHROPIC_API_KEY or configure an Anthropic auth profile in OpenClaw."
-        );
-      }
-
-      const { AGENT_MODEL } = await import("./config.js");
-      return directAnthropicCall(cachedApiKey, {
-        model: params.model ?? AGENT_MODEL,
-        maxTokens: params.maxTokens,
-        system: params.system,
-        messages: params.messages,
-      });
     },
   };
   return withBudget(raw);
@@ -443,9 +343,13 @@ export function register(api: OpenClawAPI): void {
           messages: [{ role: "user", content: conversationText }],
         });
 
+        // Note: recordUsage is handled automatically by withBudget() wrapper —
+        // do NOT call recordUsage manually here (was previously double-counting).
         if (response.usage) {
-          const { recordUsage } = await import("./budget.js");
-          recordUsage(response.usage);
+          const totalTokens = response.usage.input_tokens + response.usage.output_tokens;
+          logger.debug(
+            `[agent_end] Summary LLM call used ${totalTokens} tokens (input: ${response.usage.input_tokens}, output: ${response.usage.output_tokens})`
+          );
         }
 
         const summary = response.text.trim();

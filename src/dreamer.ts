@@ -120,21 +120,18 @@ export async function generateDream(
         {
           role: "user",
           content: hardConstraint
-            ? `${baseUserPrompt}\n\n${hardConstraint}`
-            : baseUserPrompt,
-        },
-        {
-          // Prefill forces the model to start with "# " — eliminates CoT preamble
-          // before the title and ensures deriveSlug always finds a heading.
-          role: "assistant",
-          content: "# ",
+            ? `${baseUserPrompt}\n\n${hardConstraint}\n\nStart your response with a markdown heading (# Title).`
+            : `${baseUserPrompt}\n\nStart your response with a markdown heading (# Title).`,
         },
       ],
     },
     DREAM_RETRY_OPTS
   );
 
-  return { markdown: ("# " + text).trim() };
+  const trimmed = text.trim();
+  // Ensure the dream starts with a heading
+  const markdown = trimmed.startsWith("#") ? trimmed : `# Dream\n\n${trimmed}`;
+  return { markdown };
 }
 
 /**
@@ -159,18 +156,17 @@ export async function synthesizeMetaDream(
       messages: [
         {
           role: "user",
-          content: "Weave these two dreams together into a single meta-dream narrative.",
-        },
-        {
-          role: "assistant",
-          content: "# ",
+          content:
+            "Weave these two dreams together into a single meta-dream narrative. Start your response with a markdown heading (# Title).",
         },
       ],
     },
     DREAM_RETRY_OPTS
   );
 
-  return { markdown: ("# " + text).trim() };
+  const trimmed = text.trim();
+  const markdown = trimmed.startsWith("#") ? trimmed : `# Meta-Dream\n\n${trimmed}`;
+  return { markdown };
 }
 
 /**
