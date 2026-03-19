@@ -443,9 +443,13 @@ export function register(api: OpenClawAPI): void {
           messages: [{ role: "user", content: conversationText }],
         });
 
+        // Note: recordUsage is handled automatically by withBudget() wrapper —
+        // do NOT call recordUsage manually here (was previously double-counting).
         if (response.usage) {
-          const { recordUsage } = await import("./budget.js");
-          recordUsage(response.usage);
+          const totalTokens = response.usage.input_tokens + response.usage.output_tokens;
+          logger.debug(
+            `[agent_end] Summary LLM call used ${totalTokens} tokens (input: ${response.usage.input_tokens}, output: ${response.usage.output_tokens})`
+          );
         }
 
         const summary = response.text.trim();
