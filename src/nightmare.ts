@@ -135,7 +135,8 @@ export async function runNightmareCycle(
   // Separate LLM call to distill one insight for working memory
   let insight: string | null = null;
   try {
-    insight = await consolidateDream(client, dream);
+    const consolidated = await consolidateDream(client, dream);
+    insight = consolidated.text;
     if (insight) {
       logger.info(`Insight generated for OpenClaw memory: ${insight}`);
     }
@@ -145,7 +146,8 @@ export async function runNightmareCycle(
 
   let wakingRealization: string | null = null;
   try {
-    wakingRealization = await groundDream(client, dream, exploredTerritory);
+    const grounded = await groundDream(client, dream, exploredTerritory);
+    wakingRealization = grounded.text;
     if (wakingRealization) {
       logger.info(`Waking realization generated: ${wakingRealization.length} chars`);
     }

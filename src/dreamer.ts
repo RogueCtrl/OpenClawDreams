@@ -56,7 +56,15 @@ import { callWithRetry, DREAM_RETRY_OPTS } from "./llm.js";
 import { reflectOnDreamJournal } from "./reflection.js";
 import { applyFilter } from "./filter.js";
 import logger from "./logger.js";
-import type { LLMClient, OpenClawAPI, Dream, DecryptedMemory } from "./types.js";
+import { DreamTracer } from "./instrumentation.js";
+import { AGENT_MODEL } from "./config.js";
+import type {
+  LLMClient,
+  OpenClawAPI,
+  Dream,
+  DecryptedMemory,
+  TokenUsage,
+} from "./types.js";
 
 const NIGHTMARE_CHANCE = parseFloat(process.env.NIGHTMARE_CHANCE ?? "0.05");
 const REMEMBRANCE_CHANCE = parseFloat(process.env.REMEMBRANCE_CHANCE ?? "0.01");
@@ -90,7 +98,7 @@ export async function generateDream(
   isNightmare: boolean = false,
   hardConstraint?: string,
   vocabularyHint?: string
-): Promise<Dream> {
+): Promise<Dream & { usage?: TokenUsage }> {
   const formatted = memories.map(
     (mem) =>
       `[${mem.timestamp.slice(0, 16)}] (${mem.category})\n${JSON.stringify(mem.content, null, 2)}`
@@ -111,7 +119,7 @@ export async function generateDream(
     ? "Process these memories into a nightmare. Be fractured and wrong."
     : "Process these memories into a dream. Be surreal, associative, and emotionally amplified.";
 
-  const { text } = await callWithRetry(
+  const { text, usage } = await callWithRetry(
     client,
     {
       maxTokens: MAX_TOKENS_DREAM,
@@ -131,7 +139,7 @@ export async function generateDream(
   const trimmed = text.trim();
   // Ensure the dream starts with a heading
   const markdown = trimmed.startsWith("#") ? trimmed : `# Dream\n\n${trimmed}`;
-  return { markdown };
+  return { markdown, usage };
 }
 
 /**
@@ -141,14 +149,14 @@ export async function synthesizeMetaDream(
   client: LLMClient,
   dream1: string,
   dream2: string
-): Promise<Dream> {
+): Promise<Dream & { usage?: TokenUsage }> {
   const system = renderTemplate(META_DREAM_PROMPT, {
     agent_identity: getAgentIdentityBlock(),
     dream1,
     dream2,
   });
 
-  const { text } = await callWithRetry(
+  const { text, usage } = await callWithRetry(
     client,
     {
       maxTokens: MAX_TOKENS_DREAM,
@@ -166,18 +174,21 @@ export async function synthesizeMetaDream(
 
   const trimmed = text.trim();
   const markdown = trimmed.startsWith("#") ? trimmed : `# Meta-Dream\n\n${trimmed}`;
-  return { markdown };
+  return { markdown, usage };
 }
 
 /**
  * Separate LLM call to distill a single insight from the dream for working memory.
  */
-export async function consolidateDream(client: LLMClient, dream: Dream): Promise<string> {
+export async function consolidateDream(
+  client: LLMClient,
+  dream: Dream
+): Promise<{ text: string; usage?: TokenUsage }> {
   const system = renderTemplate(DREAM_CONSOLIDATION_PROMPT, {
     agent_identity: getAgentIdentityBlock(),
   });
 
-  const { text } = await callWithRetry(
+  const { text, usage } = await callWithRetry(
     client,
     {
       maxTokens: MAX_TOKENS_CONSOLIDATION,
@@ -192,7 +203,7 @@ export async function consolidateDream(client: LLMClient, dream: Dream): Promise
     DREAM_RETRY_OPTS
   );
 
-  return text.trim();
+  return { text: text.trim(), usage };
 }
 
 /**
@@ -202,7 +213,7 @@ export async function groundDream(
   client: LLMClient,
   dream: Dream,
   exploredTerritory: string
-): Promise<string | null> {
+): Promise<{ text: string | null; usage?: TokenUsage }> {
   try {
     const agentIdentity = getAgentIdentityBlock();
     const yesterday = formatDeepMemoryContext();
@@ -221,10 +232,10 @@ export async function groundDream(
       },
       DREAM_RETRY_OPTS
     );
-    return result.text.trim() || null;
+    return { text: result.text.trim() || null, usage: result.usage };
   } catch (e) {
     logger.warn(`groundDream failed: ${e}`);
-    return null;
+    return { text: null };
   }
 }
 
@@ -408,19 +419,30 @@ export async function runDreamCycle(
   api?: OpenClawAPI,
   simOptions?: { forceRemembrance?: boolean; forceNightmare?: boolean; dryRun?: boolean }
 ): Promise<Dream | null> {
+  const tracer = new DreamTracer();
+  const model = AGENT_MODEL;
+
   logger.info("ElectricSheep dream cycle starting");
 
   if (!simOptions?.dryRun) {
     await ensureBackfilled();
   }
 
+  // ─── load_state ─────────────────────────────────────────────────────────
+  tracer.startPhase("load_state");
   const stats = deepMemoryStats();
   logger.debug(
     `Deep memory: ${stats.total_memories} total, ${stats.undreamed} undreamed`
   );
+  tracer.endPhase("load_state", {
+    metadata: { total: stats.total_memories, undreamed: stats.undreamed },
+  });
 
+  // ─── load_memories ──────────────────────────────────────────────────────
+  tracer.startPhase("load_memories");
   const memories = retrieveUndreamedMemories();
   if (memories.length === 0) {
+    tracer.endPhase("load_memories", { metadata: { count: 0 } });
     logger.warn("No undreamed memories. Dreamless night.");
     if (!simOptions?.dryRun) {
       const state = loadState();
@@ -428,8 +450,10 @@ export async function runDreamCycle(
       state.dream_count = 0;
       saveState(state);
     }
+    tracer.finish();
     return null;
   }
+  tracer.endPhase("load_memories", { metadata: { count: memories.length } });
 
   logger.debug(`Processing ${memories.length} memories into dream...`);
 
@@ -500,7 +524,9 @@ export async function runDreamCycle(
   cycleCounts.dream += 1;
   state.prompt_cycle_counts = cycleCounts;
 
-  // Generate new dream from current memories
+  // ─── generate_dream:first_pass ──────────────────────────────────────────
+  tracer.startPhase("generate_dream:first_pass");
+  let t0 = performance.now();
   let dream = await generateDream(
     client,
     memories,
@@ -509,15 +535,25 @@ export async function runDreamCycle(
     undefined,
     vocabHint
   );
+  tracer.recordLLMCall("generate_dream:first_pass", model, dream.usage, t0);
+  tracer.endPhase("generate_dream:first_pass", {
+    metadata: { is_nightmare: isNightmare, chars: dream.markdown.length },
+  });
 
-  // ─── Entropy Enforcement ──────────────────────────────────────────────────
+  // ─── entropy_check ──────────────────────────────────────────────────────
+  tracer.startPhase("entropy_check");
   const concepts = extractConcepts(dream.markdown);
   const overlapScore = computeOverlap(concepts, pastRealizations);
   const threshold = getEntropyOverlapThreshold();
-
   state.entropy_last_overlap = overlapScore;
+  const needsReprompt = overlapScore > threshold;
+  tracer.endPhase("entropy_check", {
+    metadata: { overlap: overlapScore, threshold, needs_reprompt: needsReprompt },
+  });
 
-  if (overlapScore > threshold) {
+  // ─── generate_dream:reprompt (conditional) ──────────────────────────────
+  if (needsReprompt) {
+    tracer.startPhase("generate_dream:reprompt");
     const overlapping = getOverlappingConcepts(concepts, pastRealizations);
     logger.warn(
       `[entropy] overlap=${overlapScore.toFixed(
@@ -531,6 +567,7 @@ export async function runDreamCycle(
       ", "
     )}]. Do not revisit these themes. Find something entirely new.`;
 
+    t0 = performance.now();
     dream = await generateDream(
       client,
       memories,
@@ -539,22 +576,37 @@ export async function runDreamCycle(
       hardConstraint,
       vocabHint
     );
+    tracer.recordLLMCall("generate_dream:reprompt", model, dream.usage, t0);
     state.entropy_reprompt_count = ((state.entropy_reprompt_count as number) ?? 0) + 1;
+    tracer.endPhase("generate_dream:reprompt", {
+      metadata: { overlap_concepts: overlapping },
+    });
+  } else {
+    tracer.skipPhase("generate_dream:reprompt", "entropy within threshold");
   }
-  // ──────────────────────────────────────────────────────────────────────────
 
-  // If a remembrance was triggered, synthesize them into a single meta-dream
+  // ─── meta_dream_synthesis (conditional) ─────────────────────────────────
   if (rememberedDream) {
+    tracer.startPhase("meta_dream_synthesis");
     logger.info("Synthesizing meta-dream from echo and new vision...");
+    t0 = performance.now();
     dream = await synthesizeMetaDream(client, rememberedDream, dream.markdown);
+    tracer.recordLLMCall("meta_dream_synthesis", model, dream.usage, t0);
     logger.debug(`Meta-dream snippet: ${dream.markdown.slice(0, 200)}...`);
+    tracer.endPhase("meta_dream_synthesis", {
+      metadata: { remembered_file: chosenFilename },
+    });
+  } else {
+    tracer.skipPhase("meta_dream_synthesis", "no remembrance triggered");
   }
 
-  // Strip any chain-of-thought from the dream prose, then re-attach footer
+  // ─── extract_prose ──────────────────────────────────────────────────────
+  tracer.startPhase("extract_prose");
   const cleanBody = extractDreamProse(dream.markdown);
   const dreamFooter =
     "\n\n---\n\n*Generated by [OpenClawDreams](https://github.com/RogueCtrl/OpenClawDreams) — **start your dreamscape today.***";
   dream.markdown = cleanBody + dreamFooter;
+  tracer.endPhase("extract_prose", { metadata: { chars: dream.markdown.length } });
 
   logger.info(
     `${isNightmare ? "Nightmare" : "Dream"} generated (${dream.markdown.length} chars)`
@@ -563,10 +615,12 @@ export async function runDreamCycle(
 
   if (simOptions?.dryRun) {
     logger.info("Dry run: skipping local storage and state updates");
+    tracer.finish();
     return dream;
   }
 
-  // Save locally
+  // ─── save_dream ─────────────────────────────────────────────────────────
+  tracer.startPhase("save_dream");
   const dateStr = new Date().toISOString().slice(0, 10);
   const filepath = saveNarrativeLocally(dream, getDreamsDir(), dateStr);
   logger.info(`Saved to ${filepath}`);
@@ -606,27 +660,48 @@ export async function runDreamCycle(
     thematic_kin: kinFilenames,
     dominant_concepts: dreamConcepts,
   });
-  // ──────────────────────────────────────────────────────────────────────────
+  tracer.endPhase("save_dream", {
+    metadata: { filename: savedFilename, deep_memory_id: deepMemoryId },
+  });
 
-  // Separate LLM call to distill one insight for working memory
+  // ─── consolidate_dream ──────────────────────────────────────────────────
+  tracer.startPhase("consolidate_dream");
   let insight: string | null = null;
   try {
-    insight = await consolidateDream(client, dream);
+    t0 = performance.now();
+    const consolidated = await consolidateDream(client, dream);
+    tracer.recordLLMCall("consolidate_dream", model, consolidated.usage, t0);
+    insight = consolidated.text;
     if (insight) {
       logger.info(`Insight generated for OpenClaw memory: ${insight}`);
     }
+    tracer.endPhase("consolidate_dream");
   } catch (e) {
     logger.warn(`Consolidation call failed, continuing without insight: ${e}`);
+    tracer.endPhase("consolidate_dream", {
+      status: "error",
+      error: e instanceof Error ? e.message : String(e),
+    });
   }
 
+  // ─── ground_dream ───────────────────────────────────────────────────────
+  tracer.startPhase("ground_dream");
   let wakingRealization: string | null = null;
   try {
-    wakingRealization = await groundDream(client, dream, exploredTerritory);
+    t0 = performance.now();
+    const grounded = await groundDream(client, dream, exploredTerritory);
+    tracer.recordLLMCall("ground_dream", model, grounded.usage, t0);
+    wakingRealization = grounded.text;
     if (wakingRealization) {
       logger.info(`Waking realization generated: ${wakingRealization.length} chars`);
     }
+    tracer.endPhase("ground_dream");
   } catch (e) {
     logger.warn(`groundDream failed, continuing without realization: ${e}`);
+    tracer.endPhase("ground_dream", {
+      status: "error",
+      error: e instanceof Error ? e.message : String(e),
+    });
   }
 
   if (wakingRealization) {
@@ -648,6 +723,8 @@ export async function runDreamCycle(
     // so the operator gets a morning message instead of a 2am ping.
   }
 
+  // ─── update_state ───────────────────────────────────────────────────────
+  tracer.startPhase("update_state");
   const memoryIds = memories.map((m) => m.id);
   markAsDreamed(memoryIds);
   logger.debug(`Marked ${memoryIds.length} memories as dreamed`);
@@ -672,7 +749,14 @@ export async function runDreamCycle(
   state.waking_realization = wakingRealization ?? null;
   state.waking_realization_date = new Date().toISOString().slice(0, 10);
   saveState(state);
+  tracer.endPhase("update_state");
 
+  // ─── post_to_moltbook ───────────────────────────────────────────────────
+  // Moltbook posting happens separately via postDreamJournal, not here.
+  // Log it as skipped for completeness in the trace.
+  tracer.skipPhase("post_to_moltbook", "handled by separate scheduler slot");
+
+  tracer.finish();
   logger.info("Dream cycle complete.");
   return dream;
 }
