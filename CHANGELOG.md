@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [3.0.7](https://github.com/RogueCtrl/OpenClawDreams/compare/v3.0.5...v3.0.7) (2026-03-22)
+
+
+### Features
+
+* add structured instrumentation for the dream cycle ([fa992c5](https://github.com/RogueCtrl/OpenClawDreams/commit/fa992c56fd9516ed1731fd4f240986acef3d0434))
+
+
+### Bug Fixes
+
+* add test to prevent token budget double-counting regression (ROG-68) ([7384d58](https://github.com/RogueCtrl/OpenClawDreams/commit/7384d589e137c60fd1550756873e645eede6d028))
+* instrument dream cycle and lock down budget accounting ([2837875](https://github.com/RogueCtrl/OpenClawDreams/commit/28378759cb1b491f26bd7998210f9f1a613efef9))
+
 ### [3.0.6](https://github.com/RogueCtrl/OpenClawDreams/compare/v3.0.5...v3.0.6) (2026-03-22)
 
 
