@@ -2,6 +2,25 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [3.0.8](https://github.com/RogueCtrl/OpenClawDreams/compare/v3.0.7...v3.0.8) (2026-03-22)
+
+
+### Bug Fixes
+
+* Replace `api.registerHook` with `api.on` for event handling  ([edfb133](https://github.com/RogueCtrl/OpenClawDreams/commit/edfb1331bad20f962ab2607fb9c4056aed95e9dd))
+* Replace `api.registerHook` with `api.on` for event handling and update internal logging to use `console.error`. ([356108d](https://github.com/RogueCtrl/OpenClawDreams/commit/356108d3b7842817472eb581b77fed51a356fd0f))
+* tighten agent hook event typing ([81dfa97](https://github.com/RogueCtrl/OpenClawDreams/commit/81dfa972e7c630093b071446751802bc4ea4e53b))
+
+
+### Documentation
+
+* Update OpenClaw version requirement in README. ([7c7c0af](https://github.com/RogueCtrl/OpenClawDreams/commit/7c7c0af0a22d399a375dd393beb5652da52cc1f2))
+
+
+### Refactoring
+
+* Update Claude code review workflow to use `allowed_bots` and `prompt` parameters. ([ee9da7e](https://github.com/RogueCtrl/OpenClawDreams/commit/ee9da7e25d9ae5585de83ddb290a37e96e1aadc9))
+
 ### [3.0.7](https://github.com/RogueCtrl/OpenClawDreams/compare/v3.0.5...v3.0.7) (2026-03-22)
 
 
