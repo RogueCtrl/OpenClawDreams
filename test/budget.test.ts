@@ -292,6 +292,43 @@ describe("Budget edge cases", () => {
     assert.equal(getTokensRemaining(), 0);
   });
 
+  it("records usage exactly once per LLM call (no double-counting)", async () => {
+    saveState({});
+    let callCount = 0;
+    const spyClient: LLMClient = {
+      async createMessage() {
+        callCount++;
+        return {
+          text: "ok",
+          usage: { input_tokens: 100, output_tokens: 100 },
+        };
+      },
+    };
+
+    const wrapped = withBudget(spyClient);
+    await wrapped.createMessage({
+      model: "test",
+      maxTokens: 10,
+      system: "test",
+      messages: [{ role: "user", content: "test" }],
+    });
+
+    // The underlying client should be called exactly once
+    assert.equal(callCount, 1);
+    // Usage should be recorded exactly once: 100 + 100 = 200
+    assert.equal(getTokensUsedToday(), 200);
+
+    // A second call should add exactly 200 more, not 400
+    await wrapped.createMessage({
+      model: "test",
+      maxTokens: 10,
+      system: "test",
+      messages: [{ role: "user", content: "test" }],
+    });
+    assert.equal(callCount, 2);
+    assert.equal(getTokensUsedToday(), 400);
+  });
+
   it("getBudgetStatus reflects current usage accurately", async () => {
     saveState({});
     const client = withBudget(mockClient(123, 77));
