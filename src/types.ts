@@ -172,6 +172,11 @@ export interface OpenClawAPI {
     handler: (ctx: Record<string, unknown>) => Promise<unknown>,
     opts?: { name: string }
   ): void;
+  on(
+    hookName: string,
+    handler: (event: any, ctx?: any) => Promise<void> | void,
+    opts?: { name?: string }
+  ): void;
   registerService(def: { id: string; start: () => void; stop: () => void }): void;
   registerGatewayMethod(
     method: string,

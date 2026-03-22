@@ -231,6 +231,7 @@ export async function checkAndEngage(client: LLMClient): Promise<void> {
     registerTool: () => {},
     registerCli: () => {},
     registerHook: () => {},
+    on: () => {},
     registerService: (_def: unknown) => {},
     registerGatewayMethod: (_m: string, _h: unknown) => {},
     runtime: {

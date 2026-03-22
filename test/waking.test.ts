@@ -30,6 +30,7 @@ function mockOpenClawAPI(): OpenClawAPI {
     registerTool: () => {},
     registerCli: () => {},
     registerHook: () => {},
+    on: () => {},
     registerService: (_def: unknown) => {},
     registerGatewayMethod: (_m: string, _h: unknown) => {},
     runtime: {
@@ -58,6 +59,7 @@ function mockOpenClawAPIWithMemory(): OpenClawAPI & {
     registerTool: () => {},
     registerCli: () => {},
     registerHook: () => {},
+    on: () => {},
     registerService: (_def: unknown) => {},
     registerGatewayMethod: (_m: string, _h: unknown) => {},
     runtime: {

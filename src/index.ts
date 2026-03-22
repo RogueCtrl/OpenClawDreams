@@ -291,30 +291,24 @@ export function register(api: OpenClawAPI): void {
 
   // --- Hooks ---
 
-  api.registerHook(
-    "before_agent_start",
-    async (ctx) => {
+  api.on("before_agent_start", async (event) => {
       // Capture workspace dir for identity loading (SOUL.md, IDENTITY.md)
+      const ctx = event as Record<string, unknown>;
       if (ctx.workspaceDir && typeof ctx.workspaceDir === "string") {
         setWorkspaceDir(ctx.workspaceDir);
       }
-      return ctx;
-    },
-    { name: "openclawdreams_workspace_capture" }
-  );
+  });
 
-  api.registerHook(
-    "agent_end",
-    async (event) => {
-      const msgs = (event as Record<string, unknown>).messages;
-      if (!Array.isArray(msgs) || msgs.length === 0) return event;
+  api.on("agent_end", async (event) => {
+      const msgs = event.messages;
+      if (!Array.isArray(msgs) || msgs.length === 0) return;
 
-      const userMsgs = msgs.filter((m) => m.role === "user");
-      if (userMsgs.length === 0) return event;
+      const userMsgs = msgs.filter((m: any) => m.role === "user");
+      if (userMsgs.length === 0) return;
 
       try {
         const conversationText = msgs
-          .map((m) => {
+          .map((m: any) => {
             let text = "";
             if (typeof m.content === "string") text = m.content;
             else if (Array.isArray(m.content)) {
@@ -330,7 +324,7 @@ export function register(api: OpenClawAPI): void {
           })
           .join("\\n\\n");
 
-        api.logger?.info?.(
+        console.error(
           `[ElectricSheep] Synthesizing summary for conversation ending...`
         );
         const { AGENT_MODEL } = await import("./config.js");
@@ -354,7 +348,7 @@ export function register(api: OpenClawAPI): void {
 
         const summary = response.text.trim();
         if (summary) {
-          api.logger?.info?.(
+          console.error(
             `[ElectricSheep] Captured summary: ${summary.slice(0, 50)}...`
           );
           const { parseDiffStat } = await import("./memory.js");
@@ -384,7 +378,7 @@ export function register(api: OpenClawAPI): void {
               }).trim();
               if (diffStat) {
                 memoryEntry.file_diffs = parseDiffStat(diffStat);
-                api.logger?.info?.(
+                console.error(
                   `[ElectricSheep] Captured file diffs: ${diffStat.split("\n").length} lines`
                 );
               }
@@ -392,7 +386,7 @@ export function register(api: OpenClawAPI): void {
               // git unavailable or no changes — skip silently
             }
           } else if (isSensitivePath) {
-            api.logger?.info?.(
+            console.error(
               `[ElectricSheep] Skipping file diffs — workspace path is in a sensitive/iCloud location`
             );
           }
@@ -401,12 +395,9 @@ export function register(api: OpenClawAPI): void {
         }
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : String(err);
-        api.logger?.error?.(`[ElectricSheep] Error generating summary: ${msg}`);
+        console.error(`[ElectricSheep] Error generating summary: ${msg}`);
       }
-      return event;
-    },
-    { name: "openclawdreams_conversation_capture" }
-  );
+  });
 
   // --- Background Service (replaces registerCron — not available in this API version) ---
   // Schedules: reflection @ 0,8,12,16,20h | dream @ 2h | journal @ 7h (local time)

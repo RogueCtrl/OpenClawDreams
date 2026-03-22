@@ -38,6 +38,7 @@ function mockApi(): OpenClawAPI & {
     registerTool() {},
     registerCli() {},
     registerHook() {},
+    on() {},
     registerService() {},
     registerGatewayMethod() {},
     runtime: {
