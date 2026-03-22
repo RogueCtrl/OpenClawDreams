@@ -289,6 +289,7 @@ export function registerCommands(parent: Command): void {
       registerTool: () => {},
       registerCli: () => {},
       registerHook: () => {},
+      on: () => {},
       registerService: () => {},
       registerGatewayMethod: () => {},
       runtime: { subagent: {} } as OpenClawAPI["runtime"],
@@ -661,6 +662,7 @@ export function registerCommands(parent: Command): void {
           registerTool: () => {},
           registerCli: () => {},
           registerHook: () => {},
+          on: () => {},
           registerService: () => {},
           registerGatewayMethod: () => {},
           runtime: {

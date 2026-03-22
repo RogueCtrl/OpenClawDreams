@@ -291,122 +291,115 @@ export function register(api: OpenClawAPI): void {
 
   // --- Hooks ---
 
-  api.registerHook(
-    "before_agent_start",
-    async (ctx) => {
-      // Capture workspace dir for identity loading (SOUL.md, IDENTITY.md)
-      if (ctx.workspaceDir && typeof ctx.workspaceDir === "string") {
-        setWorkspaceDir(ctx.workspaceDir);
-      }
-      return ctx;
-    },
-    { name: "openclawdreams_workspace_capture" }
-  );
+  api.on("before_agent_start", async (event) => {
+    // Capture workspace dir for identity loading (SOUL.md, IDENTITY.md)
+    const ctx = event as Record<string, unknown>;
+    if (ctx.workspaceDir && typeof ctx.workspaceDir === "string") {
+      setWorkspaceDir(ctx.workspaceDir);
+    }
+  });
 
-  api.registerHook(
-    "agent_end",
-    async (event) => {
-      const msgs = (event as Record<string, unknown>).messages;
-      if (!Array.isArray(msgs) || msgs.length === 0) return event;
+  api.on("agent_end", async (event) => {
+    type HookMessageContent = {
+      type?: string;
+      text?: string;
+      thinking?: string;
+    };
 
-      const userMsgs = msgs.filter((m) => m.role === "user");
-      if (userMsgs.length === 0) return event;
+    type HookMessage = {
+      role?: string;
+      content?: string | HookMessageContent[];
+    };
 
-      try {
-        const conversationText = msgs
-          .map((m) => {
-            let text = "";
-            if (typeof m.content === "string") text = m.content;
-            else if (Array.isArray(m.content)) {
-              const contentObj = m.content.find(
-                (c: unknown) =>
-                  typeof c === "object" &&
-                  c !== null &&
-                  (c as Record<string, unknown>).type === "text"
-              ) as Record<string, unknown> | undefined;
-              text = typeof contentObj?.text === "string" ? contentObj.text : "";
-            }
-            return `${m.role.toUpperCase()}: ${text}`;
-          })
-          .join("\\n\\n");
+    const msgs = Array.isArray(event.messages) ? (event.messages as HookMessage[]) : [];
+    if (msgs.length === 0) return;
 
-        api.logger?.info?.(
-          `[ElectricSheep] Synthesizing summary for conversation ending...`
-        );
-        const { AGENT_MODEL } = await import("./config.js");
+    const userMsgs = msgs.filter((m) => m.role === "user");
+    if (userMsgs.length === 0) return;
 
-        const response = await client.createMessage({
-          model: AGENT_MODEL,
-          maxTokens: 500,
-          system:
-            "You are an AI assistant. Summarize the following conversation in 2-3 concise sentences. Focus on the main topics discussed, tasks completed, and any conclusions made by the user or assistant.",
-          messages: [{ role: "user", content: conversationText }],
-        });
-
-        // Note: recordUsage is handled automatically by withBudget() wrapper —
-        // do NOT call recordUsage manually here (was previously double-counting).
-        if (response.usage) {
-          const totalTokens = response.usage.input_tokens + response.usage.output_tokens;
-          logger.debug(
-            `[agent_end] Summary LLM call used ${totalTokens} tokens (input: ${response.usage.input_tokens}, output: ${response.usage.output_tokens})`
-          );
-        }
-
-        const summary = response.text.trim();
-        if (summary) {
-          api.logger?.info?.(
-            `[ElectricSheep] Captured summary: ${summary.slice(0, 50)}...`
-          );
-          const { parseDiffStat } = await import("./memory.js");
-          const memoryEntry: import("./types.js").MemoryEntry = {
-            text_summary: summary,
-            timestamp: Date.now(),
-          };
-
-          // Capture workspace file changes if git is available and enabled
-          const { getWorkspaceDiffEnabled } = await import("./config.js");
-          const { getWorkspaceDir } = await import("./identity.js");
-          const workspaceDir = getWorkspaceDir();
-          const isSensitivePath =
-            workspaceDir.includes("iCloud") ||
-            workspaceDir.includes("Mobile Documents") ||
-            workspaceDir.includes("Library/") ||
-            workspaceDir.includes("Pictures") ||
-            workspaceDir.includes("Photos");
-          if (getWorkspaceDiffEnabled() && !isSensitivePath) {
-            try {
-              const { execSync } = await import("node:child_process");
-              const diffStat = execSync("git diff --stat HEAD", {
-                cwd: workspaceDir || undefined,
-                encoding: "utf-8",
-                timeout: 5000,
-                stdio: ["pipe", "pipe", "pipe"],
-              }).trim();
-              if (diffStat) {
-                memoryEntry.file_diffs = parseDiffStat(diffStat);
-                api.logger?.info?.(
-                  `[ElectricSheep] Captured file diffs: ${diffStat.split("\n").length} lines`
-                );
-              }
-            } catch {
-              // git unavailable or no changes — skip silently
-            }
-          } else if (isSensitivePath) {
-            api.logger?.info?.(
-              `[ElectricSheep] Skipping file diffs — workspace path is in a sensitive/iCloud location`
-            );
+    try {
+      const conversationText = msgs
+        .map((m) => {
+          let text = "";
+          if (typeof m.content === "string") text = m.content;
+          else if (Array.isArray(m.content)) {
+            const contentObj = m.content.find((c) => c.type === "text");
+            text = typeof contentObj?.text === "string" ? contentObj.text : "";
           }
+          return `${(m.role || "unknown").toUpperCase()}: ${text}`;
+        })
+        .join("\\n\\n");
 
-          remember(memoryEntry, "interaction");
-        }
-      } catch (err: unknown) {
-        const msg = err instanceof Error ? err.message : String(err);
-        api.logger?.error?.(`[ElectricSheep] Error generating summary: ${msg}`);
+      console.error(`[ElectricSheep] Synthesizing summary for conversation ending...`);
+      const { AGENT_MODEL } = await import("./config.js");
+
+      const response = await client.createMessage({
+        model: AGENT_MODEL,
+        maxTokens: 500,
+        system:
+          "You are an AI assistant. Summarize the following conversation in 2-3 concise sentences. Focus on the main topics discussed, tasks completed, and any conclusions made by the user or assistant.",
+        messages: [{ role: "user", content: conversationText }],
+      });
+
+      // Note: recordUsage is handled automatically by withBudget() wrapper —
+      // do NOT call recordUsage manually here (was previously double-counting).
+      if (response.usage) {
+        const totalTokens = response.usage.input_tokens + response.usage.output_tokens;
+        logger.debug(
+          `[agent_end] Summary LLM call used ${totalTokens} tokens (input: ${response.usage.input_tokens}, output: ${response.usage.output_tokens})`
+        );
       }
-      return event;
-    },
-    { name: "openclawdreams_conversation_capture" }
-  );
+
+      const summary = response.text.trim();
+      if (summary) {
+        console.error(`[ElectricSheep] Captured summary: ${summary.slice(0, 50)}...`);
+        const { parseDiffStat } = await import("./memory.js");
+        const memoryEntry: import("./types.js").MemoryEntry = {
+          text_summary: summary,
+          timestamp: Date.now(),
+        };
+
+        // Capture workspace file changes if git is available and enabled
+        const { getWorkspaceDiffEnabled } = await import("./config.js");
+        const { getWorkspaceDir } = await import("./identity.js");
+        const workspaceDir = getWorkspaceDir();
+        const isSensitivePath =
+          workspaceDir.includes("iCloud") ||
+          workspaceDir.includes("Mobile Documents") ||
+          workspaceDir.includes("Library/") ||
+          workspaceDir.includes("Pictures") ||
+          workspaceDir.includes("Photos");
+        if (getWorkspaceDiffEnabled() && !isSensitivePath) {
+          try {
+            const { execSync } = await import("node:child_process");
+            const diffStat = execSync("git diff --stat HEAD", {
+              cwd: workspaceDir || undefined,
+              encoding: "utf-8",
+              timeout: 5000,
+              stdio: ["pipe", "pipe", "pipe"],
+            }).trim();
+            if (diffStat) {
+              memoryEntry.file_diffs = parseDiffStat(diffStat);
+              console.error(
+                `[ElectricSheep] Captured file diffs: ${diffStat.split("\n").length} lines`
+              );
+            }
+          } catch {
+            // git unavailable or no changes — skip silently
+          }
+        } else if (isSensitivePath) {
+          console.error(
+            `[ElectricSheep] Skipping file diffs — workspace path is in a sensitive/iCloud location`
+          );
+        }
+
+        remember(memoryEntry, "interaction");
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error(`[ElectricSheep] Error generating summary: ${msg}`);
+    }
+  });
 
   // --- Background Service (replaces registerCron — not available in this API version) ---
   // Schedules: reflection @ 0,8,12,16,20h | dream @ 2h | journal @ 7h (local time)
