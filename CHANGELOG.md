@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [3.0.5](https://github.com/RogueCtrl/OpenClawDreams/compare/v3.0.3...v3.0.5) (2026-03-22)
+
+
+### Features
+
+* Guide dream generation to start with markdown headings and remove direct Anthropic API fallback, requiring the OpenClaw subagent runtime for LLM calls. ([2a4e9d8](https://github.com/RogueCtrl/OpenClawDreams/commit/2a4e9d832f6080cb51649cf6d964f92caecf52da))
+
+
+### Bug Fixes
+
+* make token budget runtime-configurable ([394b2f5](https://github.com/RogueCtrl/OpenClawDreams/commit/394b2f5684ffefcf3bdcd1ca755225db50149c62))
+* make token budget runtime-configurable ([c965899](https://github.com/RogueCtrl/OpenClawDreams/commit/c965899e4565870c3b6d600dcbea0820ef48810b))
+
 ### [3.0.4](https://github.com/RogueCtrl/OpenClawDreams/compare/v3.0.3...v3.0.4) (2026-03-19)
 
 
