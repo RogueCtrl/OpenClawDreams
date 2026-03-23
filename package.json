@@ -38,6 +38,7 @@
   "files": [
     "dist/src",
     "dist/bin",
+    "scripts",
     "README.md",
     "CHANGELOG.md",
     "LICENSE",
