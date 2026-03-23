@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [3.0.9](https://github.com/RogueCtrl/OpenClawDreams/compare/v3.0.8...v3.0.9) (2026-03-23)
+
+
+### Bug Fixes
+
+* include install scripts in npm package ([56ba1a7](https://github.com/RogueCtrl/OpenClawDreams/commit/56ba1a7eb995b85c3c110cf9725f1f46b7e1f97d))
+* include install scripts in npm package ([24dcd3d](https://github.com/RogueCtrl/OpenClawDreams/commit/24dcd3d8f8851baa4d5f00ec03cdd8ad8a5212db))
+
 ### [3.0.8](https://github.com/RogueCtrl/OpenClawDreams/compare/v3.0.7...v3.0.8) (2026-03-22)
 
 
