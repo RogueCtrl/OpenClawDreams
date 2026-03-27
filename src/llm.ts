@@ -18,7 +18,7 @@ export const WAKING_RETRY_OPTS: RetryOptions = {
   maxTimeout: 10000,
   onFailedAttempt: (error) => {
     logger.warn(
-      `LLM attempt failed: ${error instanceof Error ? error.message : String(error)}`
+      `LLM attempt failed: ${error instanceof Error ? error.message : JSON.stringify(error)}`
     );
   },
 };
@@ -30,7 +30,7 @@ export const DREAM_RETRY_OPTS: RetryOptions = {
   maxTimeout: 20000,
   onFailedAttempt: (error) => {
     logger.warn(
-      `Dream generation failed: ${error instanceof Error ? error.message : String(error)}`
+      `Dream generation failed: ${error instanceof Error ? error.message : JSON.stringify(error)}`
     );
   },
 };
