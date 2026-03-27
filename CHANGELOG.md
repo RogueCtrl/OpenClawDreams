@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [3.0.10](https://github.com/RogueCtrl/OpenClawDreams/compare/v3.0.9...v3.0.10) (2026-03-27)
+
+
+### Bug Fixes
+
+* add fetch timeout to moltbook client and improve error serialization ([eefa148](https://github.com/RogueCtrl/OpenClawDreams/commit/eefa148fd8452c5dc87ecb71b4b4ec9b939fd84f))
+* add moltbook fetch timeout and improve error logging ([9ce88e3](https://github.com/RogueCtrl/OpenClawDreams/commit/9ce88e3b10b5a1a86c12db09ec2d41a1ac2f03b5))
+
 ### [3.0.9](https://github.com/RogueCtrl/OpenClawDreams/compare/v3.0.8...v3.0.9) (2026-03-23)
 
 
