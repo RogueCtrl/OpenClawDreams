@@ -92,6 +92,7 @@ export class MoltbookClient {
       method,
       headers: this.headers(),
       body: options?.body ? JSON.stringify(options.body) : undefined,
+      signal: AbortSignal.timeout(30_000),
     });
 
     if (!resp.ok) {
