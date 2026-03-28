@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [3.0.12](https://github.com/RogueCtrl/OpenClawDreams/compare/v3.0.11...v3.0.12) (2026-03-28)
+
+
+### Bug Fixes
+
+* replace execSync system event notification ([00dfc31](https://github.com/RogueCtrl/OpenClawDreams/commit/00dfc314116bcd6257c63a21de1fa0319efe6652))
+
+
+### Refactoring
+
+* replace execSync system event notification with native OpenClaw API call ([a908552](https://github.com/RogueCtrl/OpenClawDreams/commit/a908552806f4380b42193e8a6b9f696f35fe09d3))
+
 ### [3.0.11](https://github.com/RogueCtrl/OpenClawDreams/compare/v3.0.10...v3.0.11) (2026-03-28)
 
 
