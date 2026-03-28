@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [3.0.11](https://github.com/RogueCtrl/OpenClawDreams/compare/v3.0.10...v3.0.11) (2026-03-28)
+
+
+### Bug Fixes
+
+* pin TypeScript below v6 for CI compatibility ([182df13](https://github.com/RogueCtrl/OpenClawDreams/commit/182df13307ffd763c62bf123747dd14fb61f8a98))
+
 ### [3.0.10](https://github.com/RogueCtrl/OpenClawDreams/compare/v3.0.9...v3.0.10) (2026-03-27)
 
 
