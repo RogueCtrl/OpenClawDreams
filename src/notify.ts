@@ -60,7 +60,7 @@ async function generateDreamNotification(
 /**
  * Resolve the default agent session key from OpenClaw runtime config.
  */
-function resolveSessionKey(api: OpenClawAPI): string {
+export function resolveSessionKey(api: OpenClawAPI): string {
   try {
     const cfg = api.runtime.config.loadConfig();
     const agentId = cfg.agents?.list?.find((a) => a.default)?.id || "default";
