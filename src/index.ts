@@ -26,7 +26,6 @@ import {
 } from "./config.js";
 import logger from "./logger.js";
 import type { LLMClient, OpenClawAPI, SchedulerState } from "./types.js";
-import { execSync } from "node:child_process";
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
 import { randomUUID } from "node:crypto";
 
@@ -420,8 +419,11 @@ export function register(api: OpenClawAPI): void {
           const title = dream ? deriveSlug(dream.markdown) : "Latest Dream";
           const msg = `Dream ready to post: ${title} — run 'openclawdreams post' to publish or 'openclawdreams post --dry-run' to preview`;
           try {
-            execSync(`openclaw system event --text "${msg}" --mode now`, {
-              stdio: "inherit",
+            const { resolveSessionKey } = await import("./notify.js");
+            const sessionKey = resolveSessionKey(api);
+            api.runtime.system.enqueueSystemEvent(msg, {
+              sessionKey,
+              contextKey: "cron:openclawdreams",
             });
             logger.info(`[ElectricSheep] Posted system event: ${msg}`);
           } catch (err) {
